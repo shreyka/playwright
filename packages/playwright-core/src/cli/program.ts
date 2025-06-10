@@ -579,6 +579,7 @@ async function open(options: Options, url: string | undefined, language: string)
 }
 
 async function codegen(options: Options & { target: string, output?: string, testIdAttribute?: string }, url: string | undefined) {
+  console.error('🚀 CUSTOM PLAYWRIGHT BUILD - CODEGEN ACTIVATED 🚀');
   const { target: language, output: outputFile, testIdAttribute: testIdAttributeName } = options;
   const tracesDir = path.join(os.tmpdir(), `playwright-recorder-trace-${Date.now()}`);
   const { context, launchOptions, contextOptions } = await launchContext(options, {

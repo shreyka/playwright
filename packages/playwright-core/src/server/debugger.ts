@@ -19,6 +19,8 @@ import { EventEmitter } from 'events';
 import { debugMode, isUnderTest, monotonicTime } from '../utils';
 import { BrowserContext } from './browserContext';
 import { commandsWithTracingSnapshots, pausesBeforeInputActions, slowMoActions } from '../protocol/debug';
+import { Recorder } from './recorder';
+import { RecorderApp } from './recorder/recorderApp';
 
 import type { CallMetadata, InstrumentationListener, SdkObject } from './instrumentation';
 
@@ -81,6 +83,21 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
     if (this._muted)
       return;
     this._enabled = true;
+    
+    // Auto-enable recording when pause() is called, similar to codegen
+    if (shouldPauseOnCall(sdkObject, metadata)) {
+      try {
+        await Recorder.show(this._context, RecorderApp.factory(this._context), {
+          mode: 'recording',
+          language: 'javascript',
+          testIdAttributeName: undefined,
+          handleSIGINT: false,
+        });
+      } catch (error) {
+        // Ignore recording activation errors and continue with pause
+      }
+    }
+    
     metadata.pauseStartTime = monotonicTime();
     const result = new Promise<void>(resolve => {
       this._pausedCallsMetadata.set(metadata, { resolve, sdkObject });
