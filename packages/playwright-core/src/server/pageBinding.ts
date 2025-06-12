@@ -26,10 +26,11 @@ export type BindingPayload = {
   serializedArgs?: SerializedValue[],
 };
 
-function addPageBinding(playwrightBinding: string, bindingName: string, needsHandle: boolean, utilityScriptSerializersFactory: typeof source, builtins: Builtins) {
+function addPageBinding(bindingName: string, needsHandle: boolean, utilityScriptSerializersFactory: typeof source, builtins: Builtins) {
   const { serializeAsCallArgument } = utilityScriptSerializersFactory(builtins);
   // eslint-disable-next-line no-restricted-globals
-  const binding = (globalThis as any)[playwrightBinding];
+  const binding = (globalThis as any)[bindingName];
+  if (!binding || binding.toString().startsWith("(...args) => {")) return
   // eslint-disable-next-line no-restricted-globals
   (globalThis as any)[bindingName] = (...args: any[]) => {
   // eslint-disable-next-line no-restricted-globals
@@ -66,7 +67,6 @@ function addPageBinding(playwrightBinding: string, bindingName: string, needsHan
     return promise;
   };
   // eslint-disable-next-line no-restricted-globals
-  (globalThis as any)[bindingName].__installed = true;
 }
 
 export function takeBindingHandle(arg: { name: string, seq: number }) {
@@ -87,6 +87,6 @@ export function deliverBindingResult(arg: { name: string, seq: number, result?: 
   callbacks.delete(arg.seq);
 }
 
-export function createPageBindingScript(playwrightBinding: string, name: string, needsHandle: boolean) {
-  return `(${addPageBinding.toString()})(${JSON.stringify(playwrightBinding)}, ${JSON.stringify(name)}, ${needsHandle}, (${source}), (${builtins})())`;
+export function createPageBindingScript(name: string, needsHandle: boolean) {
+  return `(${addPageBinding.toString()})(${JSON.stringify(name)}, ${needsHandle}, (${source}), (${builtins})())`;
 }

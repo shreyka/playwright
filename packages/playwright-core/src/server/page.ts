@@ -61,7 +61,7 @@ export interface PageDelegate {
   goForward(): Promise<boolean>;
   requestGC(): Promise<void>;
   addInitScript(initScript: InitScript): Promise<void>;
-  removeNonInternalInitScripts(): Promise<void>;
+  removeInitScripts(): Promise<void>;
   closePage(runBeforeUnload: boolean): Promise<void>;
 
   navigateFrame(frame: frames.Frame, url: string, referrer: string | undefined): Promise<frames.GotoResult>;
@@ -352,15 +352,15 @@ export class Page extends SdkObject {
       throw new Error(`Function "${name}" has been already registered in the browser context`);
     const binding = new PageBinding(name, playwrightBinding, needsHandle);
     this._pageBindings.set(name, binding);
-    await this._delegate.addInitScript(binding.initScript);
-    await Promise.all(this.frames().map(frame => frame.evaluateExpression(binding.initScript.source).catch(e => {})));
+    await this._delegate.exposeBinding(binding);
   }
 
   async _removeExposedBindings() {
-    for (const [key, binding] of this._pageBindings) {
-      if (!binding.internal)
+    for (const key of this._pageBindings.keys()) {
+      if (!key.startsWith('__pw'))
         this._pageBindings.delete(key);
     }
+    await this._delegate.removeExposedBindings();
   }
 
   setExtraHTTPHeaders(headers: types.HeadersArray) {
@@ -577,8 +577,8 @@ export class Page extends SdkObject {
   }
 
   async _removeInitScripts() {
-    this.initScripts = this.initScripts.filter(script => script.internal);
-    await this._delegate.removeNonInternalInitScripts();
+    this.initScripts.splice(0, this.initScripts.length);
+    await this._delegate.removeInitScripts();
   }
 
   needsRequestInterception(): boolean {
@@ -770,11 +770,6 @@ export class Page extends SdkObject {
       this._browserContext.addVisitedOrigin(origin);
   }
 
-  allInitScripts() {
-    const bindings = [...this._browserContext._pageBindings.values(), ...this._pageBindings.values()];
-    return [kBuiltinsScript, ...bindings.map(binding => binding.initScript), ...this._browserContext.initScripts, ...this.initScripts];
-  }
-
   getBinding(name: string) {
     return this._pageBindings.get(name) || this._browserContext._pageBindings.get(name);
   }
@@ -810,6 +805,10 @@ export class Page extends SdkObject {
 
   markAsServerSideOnly() {
     this._isServerSideOnly = true;
+  }
+
+  allBindings() {
+    return [...this._browserContext._pageBindings.values(), ...this._pageBindings.values()];
   }
 }
 
@@ -848,30 +847,42 @@ export class Worker extends SdkObject {
     this.openScope.close(new Error('Worker closed'));
   }
 
-  async evaluateExpression(expression: string, isFunction: boolean | undefined, arg: any): Promise<any> {
-    return js.evaluateExpression(await this._executionContextPromise, expression, { returnByValue: true, isFunction }, arg);
-  }
+  async evaluateExpression(expression: string, isFunction: boolean | undefined, arg: any, isolatedContext?: boolean): Promise<any> {
+    let context = await this._executionContextPromise;
+      if (context.constructor.name === "FrameExecutionContext") {
+          const frame = context.frame;
+          if (frame) {
+              if (isolatedContext) context = await frame._utilityContext();
+              else if (!isolatedContext) context = await frame._mainContext();
+          }
+      }
+      return js.evaluateExpression(context, expression, { returnByValue: true, isFunction }, arg);
+    }
 
-  async evaluateExpressionHandle(expression: string, isFunction: boolean | undefined, arg: any): Promise<any> {
-    return js.evaluateExpression(await this._executionContextPromise, expression, { returnByValue: false, isFunction }, arg);
-  }
+  async evaluateExpressionHandle(expression: string, isFunction: boolean | undefined, arg: any, isolatedContext?: boolean): Promise<any> {
+    let context = await this._executionContextPromise;
+      if (this._context.constructor.name === "FrameExecutionContext") {
+          const frame = this._context.frame;
+          if (frame) {
+              if (isolatedContext) context = await frame._utilityContext();
+              else if (!isolatedContext) context = await frame._mainContext();
+          }
+      }
+      return js.evaluateExpression(context, expression, { returnByValue: false, isFunction }, arg);
+    }
 }
 
 export class PageBinding {
-  static kPlaywrightBinding = '__playwright__binding__';
-
   readonly name: string;
   readonly playwrightFunction: frames.FunctionWithSource;
-  readonly initScript: InitScript;
   readonly needsHandle: boolean;
   readonly internal: boolean;
 
   constructor(name: string, playwrightFunction: frames.FunctionWithSource, needsHandle: boolean) {
     this.name = name;
     this.playwrightFunction = playwrightFunction;
-    this.initScript = new InitScript(createPageBindingScript(PageBinding.kPlaywrightBinding, name, needsHandle), true /* internal */);
+    this.source = createPageBindingScript(name, needsHandle);
     this.needsHandle = needsHandle;
-    this.internal = name.startsWith('__pw');
   }
 
   static async dispatch(page: Page, payload: string, context: dom.FrameExecutionContext) {
@@ -896,6 +907,8 @@ export class PageBinding {
       context.evaluate(deliverBindingResult, { name, seq, error }).catch(e => debugLogger.log('error', e));
     }
   }
+
+  readonly source: string;
 }
 
 export class InitScript {
@@ -905,14 +918,7 @@ export class InitScript {
 
   constructor(source: string, internal?: boolean, name?: string) {
     const guid = createGuid();
-    this.source = `(() => {
-      globalThis.__pwInitScripts = globalThis.__pwInitScripts || {};
-      const hasInitScript = globalThis.__pwInitScripts[${JSON.stringify(guid)}];
-      if (hasInitScript)
-        return;
-      globalThis.__pwInitScripts[${JSON.stringify(guid)}] = true;
-      ${source}
-    })();`;
+    this.source = `(() => { ${source} })();`;
     this.internal = !!internal;
     this.name = name;
   }

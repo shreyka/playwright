@@ -1,3 +1,5 @@
+// undetected-undetected_playwright-patch - custom imports
+import crypto from 'crypto';
 /**
  * Copyright 2017 Google Inc. All rights reserved.
  * Modifications copyright (c) Microsoft Corporation.
@@ -101,7 +103,8 @@ export class CRPage implements PageDelegate {
     this.updateOffline();
     this.updateExtraHTTPHeaders();
     this.updateHttpCredentials();
-    this.updateRequestInterception();
+    this._networkManager.setRequestInterception(true);
+    this.initScriptTag = crypto.randomBytes(20).toString('hex');
     this._mainFrameSession = new FrameSession(this, client, targetId, null);
     this._sessions.set(targetId, this._mainFrameSession);
     if (opener && !browserContext._options.noDefaultViewport) {
@@ -231,10 +234,11 @@ export class CRPage implements PageDelegate {
   }
 
   async addInitScript(initScript: InitScript, world: types.World = 'main'): Promise<void> {
+    this._page.initScripts.push(initScript);
     await this._forAllFrameSessions(frame => frame._evaluateOnNewDocument(initScript, world));
   }
 
-  async removeNonInternalInitScripts() {
+  async removeInitScripts() {
     await this._forAllFrameSessions(frame => frame._removeEvaluatesOnNewDocument());
   }
 
@@ -365,6 +369,15 @@ export class CRPage implements PageDelegate {
   shouldToggleStyleSheetToSyncAnimations(): boolean {
     return false;
   }
+
+  async exposeBinding(binding) {
+    await this._forAllFrameSessions(frame => frame._initBinding(binding));
+    await Promise.all(this._page.frames().map(frame => frame.evaluateExpression(binding.source).catch(e => {})));
+  }
+
+  async removeExposedBindings() {
+    await this._forAllFrameSessions(frame => frame._removeExposedBindings());
+  }
 }
 
 class FrameSession {
@@ -479,19 +492,6 @@ class FrameSession {
           this._handleFrameTree(frameTree);
           this._addRendererListeners();
         }
-
-        const localFrames = this._isMainFrame() ? this._page.frames() : [this._page._frameManager.frame(this._targetId)!];
-        for (const frame of localFrames) {
-          // Note: frames might be removed before we send these.
-          this._client._sendMayFail('Page.createIsolatedWorld', {
-            frameId: frame._id,
-            grantUniveralAccess: true,
-            worldName: UTILITY_WORLD_NAME,
-          });
-          for (const initScript of this._crPage._page.allInitScripts())
-            frame.evaluateExpression(initScript.source).catch(e => {});
-        }
-
         const isInitialEmptyPage = this._isMainFrame() && this._page.mainFrame().url() === ':';
         if (isInitialEmptyPage) {
           // Ignore lifecycle events, worlds and bindings for the initial empty page. It is never the final page
@@ -501,14 +501,20 @@ class FrameSession {
             this._eventListeners.push(eventsHelper.addEventListener(this._client, 'Page.lifecycleEvent', event => this._onLifecycleEvent(event)));
           });
         } else {
+          const localFrames = this._isMainFrame() ? this._page.frames() : [this._page._frameManager.frame(this._targetId)!];
+          for (const frame of localFrames) {
+            this._page._frameManager.frame(frame._id)._context("utility");
+            for (const binding of this._crPage._browserContext._pageBindings.values())
+              frame.evaluateExpression(binding.source).catch(e => {});
+            for (const source of this._crPage._browserContext.initScripts)
+              frame.evaluateExpression(source).catch(e => {});
+          }
           this._firstNonInitialNavigationCommittedFulfill();
           this._eventListeners.push(eventsHelper.addEventListener(this._client, 'Page.lifecycleEvent', event => this._onLifecycleEvent(event)));
         }
       }),
       this._client.send('Log.enable', {}),
       lifecycleEventsEnabled = this._client.send('Page.setLifecycleEventsEnabled', { enabled: true }),
-      this._client.send('Runtime.enable', {}),
-      this._client.send('Runtime.addBinding', { name: PageBinding.kPlaywrightBinding }),
       this._client.send('Page.addScriptToEvaluateOnNewDocument', {
         source: '',
         worldName: UTILITY_WORLD_NAME,
@@ -541,14 +547,16 @@ class FrameSession {
       promises.push(this._updateGeolocation(true));
       promises.push(this._updateEmulateMedia());
       promises.push(this._updateFileChooserInterception(true));
-      for (const initScript of this._crPage._page.allInitScripts())
-        promises.push(this._evaluateOnNewDocument(initScript, 'main'));
+      for (const binding of this._crPage._page.allBindings()) promises.push(this._initBinding(binding));
+      for (const initScript of this._crPage._browserContext.initScripts) promises.push(this._evaluateOnNewDocument(initScript, 'main'));
+      for (const initScript of this._crPage._page.initScripts) promises.push(this._evaluateOnNewDocument(initScript, 'main'));
       if (screencastOptions)
         promises.push(this._startVideoRecording(screencastOptions));
     }
-    promises.push(this._client.send('Runtime.runIfWaitingForDebugger'));
+    if (!(this._crPage._page._pageBindings.size || this._crPage._browserContext._pageBindings.size)) promises.push(this._client.send('Runtime.runIfWaitingForDebugger'));
     promises.push(this._firstNonInitialNavigationCommittedPromise);
     await Promise.all(promises);
+    if (this._crPage._page._pageBindings.size || this._crPage._browserContext._pageBindings.size) await this._client.send('Runtime.runIfWaitingForDebugger');
   }
 
   dispose() {
@@ -565,18 +573,31 @@ class FrameSession {
 
   async _navigate(frame: frames.Frame, url: string, referrer: string | undefined): Promise<frames.GotoResult> {
     const response = await this._client.send('Page.navigate', { url, referrer, frameId: frame._id, referrerPolicy: 'unsafeUrl' });
+    this._client._sendMayFail('Page.waitForDebugger');
     if (response.errorText)
       throw new frames.NavigationAbortedError(response.loaderId, `${response.errorText} at ${url}`);
     return { newDocumentId: response.loaderId };
   }
 
-  _onLifecycleEvent(event: Protocol.Page.lifecycleEventPayload) {
+  async _onLifecycleEvent(event: Protocol.Page.lifecycleEventPayload) {
     if (this._eventBelongsToStaleFrame(event.frameId))
       return;
     if (event.name === 'load')
       this._page._frameManager.frameLifecycleEvent(event.frameId, 'load');
     else if (event.name === 'DOMContentLoaded')
       this._page._frameManager.frameLifecycleEvent(event.frameId, 'domcontentloaded');
+    await this._client._sendMayFail('Runtime.runIfWaitingForDebugger');
+      var document = await this._client._sendMayFail("DOM.getDocument");
+      if (!document) return
+      var query = await this._client._sendMayFail("DOM.querySelectorAll", {
+        nodeId: document.root.nodeId,
+        selector: "[class=" + this._crPage.initScriptTag + "]"
+      });
+      if (!query) return
+      for (const nodeId of query.nodeIds) await this._client._sendMayFail("DOM.removeNode", { nodeId: nodeId });
+      await this._client._sendMayFail('Runtime.runIfWaitingForDebugger');
+      // ensuring execution context
+      try { await this._page._frameManager.frame(this._targetId)._context("utility") } catch { };
   }
 
   _handleFrameTree(frameTree: Protocol.Page.FrameTree) {
@@ -623,12 +644,24 @@ class FrameSession {
     this._page._frameManager.frameAttached(frameId, parentFrameId);
   }
 
-  _onFrameNavigated(framePayload: Protocol.Page.Frame, initial: boolean) {
+  async _onFrameNavigated(framePayload: Protocol.Page.Frame, initial: boolean) {
     if (this._eventBelongsToStaleFrame(framePayload.id))
       return;
     this._page._frameManager.frameCommittedNewDocumentNavigation(framePayload.id, framePayload.url + (framePayload.urlFragment || ''), framePayload.name || '', framePayload.loaderId, initial);
     if (!initial)
       this._firstNonInitialNavigationCommittedFulfill();
+    await this._client._sendMayFail('Runtime.runIfWaitingForDebugger');
+      var document = await this._client._sendMayFail("DOM.getDocument");
+      if (!document) return
+      var query = await this._client._sendMayFail("DOM.querySelectorAll", {
+        nodeId: document.root.nodeId,
+        selector: "[class=" + this._crPage.initScriptTag + "]"
+      });
+      if (!query) return
+      for (const nodeId of query.nodeIds) await this._client._sendMayFail("DOM.removeNode", { nodeId: nodeId });
+      await this._client._sendMayFail('Runtime.runIfWaitingForDebugger');
+      // ensuring execution context
+      try { await this._page._frameManager.frame(this._targetId)._context("utility") } catch { };
   }
 
   _onFrameRequestedNavigation(payload: Protocol.Page.frameRequestedNavigationPayload) {
@@ -665,19 +698,24 @@ class FrameSession {
   }
 
   _onExecutionContextCreated(contextPayload: Protocol.Runtime.ExecutionContextDescription) {
+    for (const name of this._exposedBindingNames) this._client._sendMayFail('Runtime.addBinding', { name: name, executionContextId: contextPayload.id });
     const frame = contextPayload.auxData ? this._page._frameManager.frame(contextPayload.auxData.frameId) : null;
+    if (contextPayload.auxData.type == "worker") throw new Error("ExecutionContext is worker");
     if (!frame || this._eventBelongsToStaleFrame(frame._id))
       return;
     const delegate = new CRExecutionContext(this._client, contextPayload);
-    let worldName: types.World|null = null;
-    if (contextPayload.auxData && !!contextPayload.auxData.isDefault)
-      worldName = 'main';
-    else if (contextPayload.name === UTILITY_WORLD_NAME)
-      worldName = 'utility';
+    let worldName = contextPayload.name;
     const context = new dom.FrameExecutionContext(delegate, frame, worldName);
     if (worldName)
       frame._contextCreated(worldName, context);
     this._contextIdToContext.set(contextPayload.id, context);
+    for (const source of this._exposedBindingScripts) {
+      this._client._sendMayFail("Runtime.evaluate", {
+        expression: source,
+        contextId: contextPayload.id,
+        awaitPromise: true,
+      })
+    }
   }
 
   _onExecutionContextDestroyed(executionContextId: number) {
@@ -693,7 +731,7 @@ class FrameSession {
       this._onExecutionContextDestroyed(contextId);
   }
 
-  _onAttachedToTarget(event: Protocol.Target.attachedToTargetPayload) {
+  async _onAttachedToTarget(event: Protocol.Target.attachedToTargetPayload) {
     const session = this._client.createChildSession(event.sessionId);
 
     if (event.targetInfo.type === 'iframe') {
@@ -725,8 +763,17 @@ class FrameSession {
     session.once('Runtime.executionContextCreated', async event => {
       worker._createExecutionContext(new CRExecutionContext(session, event.context));
     });
+    var globalThis = await session._sendMayFail('Runtime.evaluate', {
+      expression: "globalThis",
+      serializationOptions: { serialization: "idOnly" }
+
+    });
+    if (globalThis && globalThis.result) {
+      var globalThisObjId = globalThis.result.objectId;
+      var executionContextId = parseInt(globalThisObjId.split('.')[1], 10);
+      worker._createExecutionContext(new CRExecutionContext(session, { id: executionContextId }));
+    }
     // This might fail if the target is closed before we initialize.
-    session._sendMayFail('Runtime.enable');
     // TODO: attribute workers to the right frame.
     this._crPage._networkManager.addSession(session, this._page._frameManager.frame(this._targetId) ?? undefined).catch(() => {});
     session._sendMayFail('Runtime.runIfWaitingForDebugger');
@@ -805,8 +852,8 @@ class FrameSession {
     const pageOrError = await this._crPage._page.waitForInitializedOrError();
     if (!(pageOrError instanceof Error)) {
       const context = this._contextIdToContext.get(event.executionContextId);
-      if (context)
-        await this._page._onBindingCalled(event.payload, context);
+      if (context) await this._page._onBindingCalled(event.payload, context);
+      else await this._page._onBindingCalled(event.payload, (await this._page.mainFrame()._mainContext())) // This might be a bit sketchy but it works for now
     }
   }
 
@@ -1052,16 +1099,11 @@ class FrameSession {
   }
 
   async _evaluateOnNewDocument(initScript: InitScript, world: types.World): Promise<void> {
-    const worldName = world === 'utility' ? UTILITY_WORLD_NAME : undefined;
-    const { identifier } = await this._client.send('Page.addScriptToEvaluateOnNewDocument', { source: initScript.source, worldName });
-    if (!initScript.internal)
-      this._evaluateOnNewDocumentIdentifiers.push(identifier);
+    this._evaluateOnNewDocumentScripts.push(initScript)
   }
 
   async _removeEvaluatesOnNewDocument(): Promise<void> {
-    const identifiers = this._evaluateOnNewDocumentIdentifiers;
-    this._evaluateOnNewDocumentIdentifiers = [];
-    await Promise.all(identifiers.map(identifier => this._client.send('Page.removeScriptToEvaluateOnNewDocument', { identifier })));
+    this._evaluateOnNewDocumentScripts = [];
   }
 
   async _getContentFrame(handle: dom.ElementHandle): Promise<frames.Frame | null> {
@@ -1167,6 +1209,47 @@ class FrameSession {
     if (!result || result.object.subtype === 'null')
       throw new Error(dom.kUnableToAdoptErrorMessage);
     return createHandle(to, result.object).asElement()!;
+  }
+
+  _exposedBindingNames: string[] = [];
+  _evaluateOnNewDocumentScripts: string[] = [];
+  _parsedExecutionContextIds: number[] = [];
+  _exposedBindingScripts: string[] = [];
+
+  async _initBinding(binding = PageBinding) {
+    var result = await this._client._sendMayFail('Page.createIsolatedWorld', {
+      frameId: this._targetId, grantUniveralAccess: true, worldName: "utility"
+    });
+    if (!result) return
+    var isolatedContextId = result.executionContextId
+
+    var globalThis = await this._client._sendMayFail('Runtime.evaluate', {
+      expression: "globalThis",
+      serializationOptions: { serialization: "idOnly" }
+    });
+    if (!globalThis) return
+    var globalThisObjId = globalThis["result"]['objectId']
+    var mainContextId = parseInt(globalThisObjId.split('.')[1], 10);
+
+    await Promise.all([
+      this._client._sendMayFail('Runtime.addBinding', { name: binding.name }),
+      this._client._sendMayFail('Runtime.addBinding', { name: binding.name, executionContextId: mainContextId }),
+      this._client._sendMayFail('Runtime.addBinding', { name: binding.name, executionContextId: isolatedContextId }),
+      // this._client._sendMayFail("Runtime.evaluate", { expression: binding.source, contextId: mainContextId, awaitPromise: true })
+    ]);
+    this._exposedBindingNames.push(binding.name);
+    this._exposedBindingScripts.push(binding.source);
+    await this._crPage.addInitScript(binding.source);
+    //this._client._sendMayFail('Runtime.runIfWaitingForDebugger')
+  }
+
+  async _removeExposedBindings() {
+    const toRetain: string[] = [];
+    const toRemove: string[] = [];
+    for (const name of this._exposedBindingNames)
+      (name.startsWith('__pw_') ? toRetain : toRemove).push(name);
+    this._exposedBindingNames = toRetain;
+    await Promise.all(toRemove.map(name => this._client.send('Runtime.removeBinding', { name })));
   }
 }
 

@@ -154,17 +154,33 @@ export class JSHandle<T = any> extends SdkObject {
     return evaluate(this._context, false /* returnByValue */, pageFunction, this, arg);
   }
 
-  async evaluateExpression(expression: string, options: { isFunction?: boolean }, arg: any) {
-    const value = await evaluateExpression(this._context, expression, { ...options, returnByValue: true }, this, arg);
-    await this._context.doSlowMo();
-    return value;
-  }
+  async evaluateExpression(expression: string, options: { isFunction?: boolean }, arg: any, isolatedContext?: boolean) {
+    let context = this._context;
+      if (context.constructor.name === "FrameExecutionContext") {
+          const frame = context.frame;
+          if (frame) {
+              if (isolatedContext) context = await frame._utilityContext();
+              else if (!isolatedContext) context = await frame._mainContext();
+          }
+      }
+      const value = await evaluateExpression(context, expression, { ...options, returnByValue: true }, this, arg);
+      await context.doSlowMo();
+      return value;
+    }
 
-  async evaluateExpressionHandle(expression: string, options: { isFunction?: boolean }, arg: any): Promise<JSHandle<any>> {
-    const value = await evaluateExpression(this._context, expression, { ...options, returnByValue: false }, this, arg);
-    await this._context.doSlowMo();
-    return value;
-  }
+  async evaluateExpressionHandle(expression: string, options: { isFunction?: boolean }, arg: any, isolatedContext?: boolean): Promise<JSHandle<any>> {
+    let context = this._context;
+      if (this._context.constructor.name === "FrameExecutionContext") {
+          const frame = this._context.frame;
+          if (frame) {
+              if (isolatedContext) context = await frame._utilityContext();
+              else if (!isolatedContext) context = await frame._mainContext();
+          }
+      }
+      const value = await evaluateExpression(context, expression, { ...options, returnByValue: false }, this, arg);
+      await context.doSlowMo();
+      return value;
+    }
 
   async getProperty(propertyName: string): Promise<JSHandle> {
     const objectHandle = await this.evaluateHandle((object: any, propertyName) => {

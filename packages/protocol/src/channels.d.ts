@@ -2813,9 +2813,11 @@ export type FrameEvaluateExpressionParams = {
   expression: string,
   isFunction?: boolean,
   arg: SerializedArgument,
+  isolatedContext?: boolean,
 };
 export type FrameEvaluateExpressionOptions = {
   isFunction?: boolean,
+  isolatedContext?: boolean,
 };
 export type FrameEvaluateExpressionResult = {
   value: SerializedValue,
@@ -2824,9 +2826,11 @@ export type FrameEvaluateExpressionHandleParams = {
   expression: string,
   isFunction?: boolean,
   arg: SerializedArgument,
+  isolatedContext?: boolean,
 };
 export type FrameEvaluateExpressionHandleOptions = {
   isFunction?: boolean,
+  isolatedContext?: boolean,
 };
 export type FrameEvaluateExpressionHandleResult = {
   handle: JSHandleChannel,
@@ -3273,9 +3277,11 @@ export type WorkerEvaluateExpressionParams = {
   expression: string,
   isFunction?: boolean,
   arg: SerializedArgument,
+  isolatedContext?: boolean,
 };
 export type WorkerEvaluateExpressionOptions = {
   isFunction?: boolean,
+  isolatedContext?: boolean,
 };
 export type WorkerEvaluateExpressionResult = {
   value: SerializedValue,
@@ -3284,9 +3290,11 @@ export type WorkerEvaluateExpressionHandleParams = {
   expression: string,
   isFunction?: boolean,
   arg: SerializedArgument,
+  isolatedContext?: boolean,
 };
 export type WorkerEvaluateExpressionHandleOptions = {
   isFunction?: boolean,
+  isolatedContext?: boolean,
 };
 export type WorkerEvaluateExpressionHandleResult = {
   handle: JSHandleChannel,
@@ -3322,9 +3330,11 @@ export type JSHandleEvaluateExpressionParams = {
   expression: string,
   isFunction?: boolean,
   arg: SerializedArgument,
+  isolatedContext?: boolean,
 };
 export type JSHandleEvaluateExpressionOptions = {
   isFunction?: boolean,
+  isolatedContext?: boolean,
 };
 export type JSHandleEvaluateExpressionResult = {
   value: SerializedValue,
@@ -3333,9 +3343,11 @@ export type JSHandleEvaluateExpressionHandleParams = {
   expression: string,
   isFunction?: boolean,
   arg: SerializedArgument,
+  isolatedContext?: boolean,
 };
 export type JSHandleEvaluateExpressionHandleOptions = {
   isFunction?: boolean,
+  isolatedContext?: boolean,
 };
 export type JSHandleEvaluateExpressionHandleResult = {
   handle: JSHandleChannel,

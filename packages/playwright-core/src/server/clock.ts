@@ -92,6 +92,14 @@ export class Clock {
   }
 
   private async _evaluateInFrames(script: string) {
+    // Dont ask me why this works
+    await Promise.all(this._browserContext.pages().map(async page => {
+      await Promise.all(page.frames().map(async frame => {
+        try {
+          await frame.evaluateExpression("");
+        } catch (e) {}
+      }));
+    }));
     await this._browserContext.safeNonStallingEvaluateInAllFrames(script, 'main', { throwOnJSErrors: true });
   }
 }

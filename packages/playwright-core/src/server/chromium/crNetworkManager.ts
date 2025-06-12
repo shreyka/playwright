@@ -1,3 +1,5 @@
+// undetected-undetected_playwright-patch - custom imports
+import crypto from 'crypto';
 /**
  * Copyright 2017 Google Inc. All rights reserved.
  * Modifications copyright (c) Microsoft Corporation.
@@ -156,7 +158,7 @@ export class CRNetworkManager {
     const enabled = this._protocolRequestInterceptionEnabled;
     if (initial && !enabled)
       return;
-    const cachePromise = info.session.send('Network.setCacheDisabled', { cacheDisabled: enabled });
+    const cachePromise = info.session.send('Network.setCacheDisabled', { cacheDisabled: false });
     let fetchPromise = Promise.resolve<any>(undefined);
     if (!info.workerFrame) {
       if (enabled)
@@ -238,6 +240,7 @@ export class CRNetworkManager {
   }
 
   _onRequestPaused(sessionInfo: SessionInfo, event: Protocol.Fetch.requestPausedPayload) {
+    if (this._alreadyTrackedNetworkIds.has(event.networkId)) return;
     if (!event.networkId) {
       // Fetch without networkId means that request was not recognized by inspector, and
       // it will never receive Network.requestWillBeSent. Continue the request to not affect it.
@@ -276,6 +279,7 @@ export class CRNetworkManager {
   }
 
   _onRequest(requestWillBeSentSessionInfo: SessionInfo, requestWillBeSentEvent: Protocol.Network.requestWillBeSentPayload, requestPausedSessionInfo: SessionInfo | undefined, requestPausedEvent: Protocol.Fetch.requestPausedPayload | undefined) {
+    if (this._alreadyTrackedNetworkIds.has(requestWillBeSentEvent.initiator.requestId)) return;
     if (requestWillBeSentEvent.request.url.startsWith('data:'))
       return;
     let redirectedFrom: InterceptableRequest | null = null;
@@ -342,7 +346,7 @@ export class CRNetworkManager {
         headersOverride = redirectedFrom?._originalRequestRoute?._alreadyContinuedParams?.headers;
         requestPausedSessionInfo!.session._sendMayFail('Fetch.continueRequest', { requestId: requestPausedEvent.requestId, headers: headersOverride });
       } else {
-        route = new RouteImpl(requestPausedSessionInfo!.session, requestPausedEvent.requestId);
+        route = new RouteImpl(requestPausedSessionInfo!.session, requestPausedEvent.requestId, this._page, requestPausedEvent.networkId, this);
       }
     }
     const isNavigationRequest = requestWillBeSentEvent.requestId === requestWillBeSentEvent.loaderId && requestWillBeSentEvent.type === 'Document';
@@ -547,6 +551,8 @@ export class CRNetworkManager {
     if (request.session !== sessionInfo.session && !sessionInfo.isMain && request._documentId === request._requestId)
       request.session = sessionInfo.session;
   }
+
+  _alreadyTrackedNetworkIds: Set<string> = new Set();
 }
 
 class InterceptableRequest {
@@ -606,32 +612,82 @@ class RouteImpl implements network.RouteDelegate {
   _alreadyContinuedParams: Protocol.Fetch.continueRequestParameters | undefined;
   _fulfilled: boolean = false;
 
-  constructor(session: CRSession, interceptionId: string) {
+  constructor(session: CRSession, interceptionId: string, page: Page, networkId, sessionManager) {
+    this._sessionManager = void 0;
+    this._networkId = void 0;
+    this._page = void 0;
     this._session = session;
     this._interceptionId = interceptionId;
+    this._page = page;
+    this._networkId = networkId;
+    this._sessionManager = sessionManager;
+    eventsHelper.addEventListener(this._session, 'Fetch.requestPaused', async e => await this._networkRequestIntercepted(e));
   }
 
   async continue(overrides: types.NormalizedContinueOverrides): Promise<void> {
     this._alreadyContinuedParams = {
-      requestId: this._interceptionId!,
+      requestId: this._interceptionId,
       url: overrides.url,
       headers: overrides.headers,
       method: overrides.method,
-      postData: overrides.postData ? overrides.postData.toString('base64') : undefined
+      postData: overrides.postData ? overrides.postData.toString('base64') : undefined,
     };
-    await catchDisallowedErrors(async () => {
-      await this._session.send('Fetch.continueRequest', this._alreadyContinuedParams);
-    });
+    if (overrides.url && (overrides.url === 'http://patchright-init-script-inject.internal/' || overrides.url === 'https://patchright-init-script-inject.internal/')) {
+      await catchDisallowedErrors(async () => {
+        this._sessionManager._alreadyTrackedNetworkIds.add(this._networkId);
+        this._session.send('Fetch.continueRequest', { requestId: this._interceptionId, interceptResponse: true });
+      }) ;
+    } else {
+      await catchDisallowedErrors(async () => {
+        await this._session.send('Fetch.continueRequest', this._alreadyContinuedParams);
+      });
+    }
   }
 
   async fulfill(response: types.NormalizedFulfillResponse) {
+    const isTextHtml = response.resourceType === 'Document' || response.headers.some(header => header.name === 'content-type' && header.value.includes('text/html'));
+    var allInjections = [...this._page._delegate._mainFrameSession._evaluateOnNewDocumentScripts];
+        for (const binding of this._page._delegate._browserContext._pageBindings.values()) {
+          if (!allInjections.includes(binding)) allInjections.push(binding);
+        }
+    if (isTextHtml && allInjections.length) {
+      // I Chatted so hard for this Code
+      let scriptNonce = crypto.randomBytes(22).toString('hex');
+      for (let i = 0; i < response.headers.length; i++) {
+        if (response.headers[i].name === 'content-security-policy' || response.headers[i].name === 'content-security-policy-report-only') {
+          // Search for an existing script-src nonce that we can hijack
+          let cspValue = response.headers[i].value;
+          const nonceRegex = /script-src[^;]*'nonce-([\w-]+)'/;
+          const nonceMatch = cspValue.match(nonceRegex);
+          if (nonceMatch) {
+            scriptNonce = nonceMatch[1];
+          } else {
+            // Add the new nonce value to the script-src directive
+            const scriptSrcRegex = /(script-src[^;]*)(;|$)/;
+            const newCspValue = cspValue.replace(scriptSrcRegex, `$1 'nonce-${scriptNonce}'$2`);
+            response.headers[i].value = newCspValue;
+          }
+          break;
+        }
+      }
+      let injectionHTML = "";
+      allInjections.forEach((script) => {
+        let scriptId = crypto.randomBytes(22).toString('hex');
+        injectionHTML += `<script class="${this._page._delegate.initScriptTag}" nonce="${scriptNonce}" type="text/javascript">document.getElementById("${scriptId}")?.remove();${script.source}</script>`;
+      });
+      if (response.isBase64) {
+        response.isBase64 = false;
+        response.body = injectionHTML + Buffer.from(response.body, 'base64').toString('utf-8');
+      } else {
+        response.body = injectionHTML + response.body;
+      }
+    }
     this._fulfilled = true;
     const body = response.isBase64 ? response.body : Buffer.from(response.body).toString('base64');
-
     const responseHeaders = splitSetCookieHeader(response.headers);
     await catchDisallowedErrors(async () => {
       await this._session.send('Fetch.fulfillRequest', {
-        requestId: this._interceptionId!,
+        requestId: response.interceptionId ? response.interceptionId : this._interceptionId,
         responseCode: response.status,
         responsePhrase: network.statusText(response.status),
         responseHeaders,
@@ -649,6 +705,33 @@ class RouteImpl implements network.RouteDelegate {
         errorReason
       });
     });
+  }
+
+  async _networkRequestIntercepted(event) {
+    if (event.resourceType !== 'Document') {
+      /*await catchDisallowedErrors(async () => {
+        await this._session.send('Fetch.continueRequest', { requestId: event.requestId });
+      });*/
+      return;
+    }
+    if (this._networkId != event.networkId || !this._sessionManager._alreadyTrackedNetworkIds.has(event.networkId)) return;
+    try {
+      if (event.responseStatusCode >= 301 && event.responseStatusCode <= 308  || (event.redirectedRequestId && !event.responseStatusCode)) {
+        await this._session.send('Fetch.continueRequest', { requestId: event.requestId, interceptResponse: true });
+      } else {
+        const responseBody = await this._session.send('Fetch.getResponseBody', { requestId: event.requestId });
+        await this.fulfill({
+          headers: event.responseHeaders,
+          isBase64: true,
+          body: responseBody.body,
+          status: event.responseStatusCode,
+          interceptionId: event.requestId,
+          resourceType: event.resourceType,
+        })
+      }
+    } catch (error) {
+      await this._session._sendMayFail('Fetch.continueRequest', { requestId: event.requestId });
+    }
   }
 }
 

@@ -44,8 +44,6 @@ export class CRServiceWorker extends Worker {
       this.updateOffline();
       this._networkManager.addSession(session, undefined, true /* isMain */).catch(() => {});
     }
-
-    session.send('Runtime.enable', {}).catch(e => { });
     session.send('Runtime.runIfWaitingForDebugger').catch(e => { });
     session.on('Inspector.targetReloadedAfterCrash', () => {
       // Resume service worker after restart.

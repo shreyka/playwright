@@ -376,7 +376,7 @@ export class BidiPage implements PageDelegate {
       this._initScriptIds.push(script);
   }
 
-  async removeNonInternalInitScripts() {
+  async removeInitScripts() {
     const promises = this._initScriptIds.map(script => this._session.send('script.removePreloadScript', { script }));
     this._initScriptIds = [];
     await Promise.all(promises);

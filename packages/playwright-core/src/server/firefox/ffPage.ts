@@ -390,7 +390,7 @@ export class FFPage implements PageDelegate {
     await this._session.send('Page.setInitScripts', { scripts: this._initScripts.map(s => ({ script: s.initScript.source, worldName: s.worldName })) });
   }
 
-  async removeNonInternalInitScripts() {
+  async removeInitScripts() {
     this._initScripts = this._initScripts.filter(s => s.initScript.internal);
     await this._session.send('Page.setInitScripts', { scripts: this._initScripts.map(s => ({ script: s.initScript.source, worldName: s.worldName })) });
   }

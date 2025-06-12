@@ -1,17 +1,3 @@
-# Copyright (c) Microsoft Corporation.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 StackFrame:
   type: object
   properties:
@@ -19,9 +5,6 @@ StackFrame:
     line: number
     column: number
     function: string?
-
-# This object can be send with any rpc call in the "metadata" field.
-
 Metadata:
   type: object
   properties:
@@ -33,9 +16,7 @@ Metadata:
         column: number?
     apiName: string?
     internal: boolean?
-    # Test runner step id.
     stepId: string?
-
 ClientSideCallMetadata:
   type: object
   properties:
@@ -43,14 +24,11 @@ ClientSideCallMetadata:
     stack:
       type: array?
       items: StackFrame
-
 Point:
   type: object
   properties:
     x: number
     y: number
-
-
 Rect:
   type: object
   properties:
@@ -58,11 +36,8 @@ Rect:
     y: number
     width: number
     height: number
-
-
 SerializedValue:
   type: object
-  # Exactly one of the properties must be present.
   properties:
     n: number?
     b: boolean?
@@ -70,19 +45,15 @@ SerializedValue:
     v:
       type: enum?
       literals:
-      - null
-      - undefined
-      - NaN
-      - Infinity
-      - -Infinity
-      - "-0"
-    # String representation of the Date.
+        - null
+        - undefined
+        - NaN
+        - Infinity
+        - -Infinity
+        - "-0"
     d: string?
-    # String representation of the URL.
     u: string?
-    # String representation of BigInt.
     bi: string?
-    # Typed array.
     ta:
       type: object?
       properties:
@@ -90,25 +61,23 @@ SerializedValue:
         k:
           type: enum
           literals:
-          - i8
-          - ui8
-          - ui8c
-          - i16
-          - ui16
-          - i32
-          - ui32
-          - f32
-          - f64
-          - bi64
-          - bui64
-    # Serialized Error object.
+            - i8
+            - ui8
+            - ui8c
+            - i16
+            - ui16
+            - i32
+            - ui32
+            - f32
+            - f64
+            - bi64
+            - bui64
     e:
       type: object?
       properties:
         m: string
         n: string
         s: string
-    # Regular expression pattern and flags.
     r:
       type: object?
       properties:
@@ -117,7 +86,6 @@ SerializedValue:
     a:
       type: array?
       items: SerializedValue
-    # Object with keys and values.
     o:
       type: array?
       items:
@@ -125,15 +93,9 @@ SerializedValue:
         properties:
           k: string
           v: SerializedValue
-    # An index in the handles array from SerializedArgument.
     h: number?
-    # Index of the object in value-type for circular reference resolution.
     id: number?
-    # Ref to the object in value-type for circular reference resolution.
     ref: number?
-
-
-# Represents a value with handle references.
 SerializedArgument:
   type: object
   properties:
@@ -141,8 +103,6 @@ SerializedArgument:
     handles:
       type: array
       items: Channel
-
-
 ExpectedTextValue:
   type: object
   properties:
@@ -152,8 +112,6 @@ ExpectedTextValue:
     matchSubstring: boolean?
     ignoreCase: boolean?
     normalizeWhiteSpace: boolean?
-
-
 AXNode:
   type: object
   properties:
@@ -177,15 +135,15 @@ AXNode:
     checked:
       type: enum?
       literals:
-      - checked
-      - unchecked
-      - mixed
+        - checked
+        - unchecked
+        - mixed
     pressed:
       type: enum?
       literals:
-      - pressed
-      - released
-      - mixed
+        - pressed
+        - released
+        - mixed
     level: number?
     valuemin: number?
     valuemax: number?
@@ -196,8 +154,6 @@ AXNode:
     children:
       type: array?
       items: AXNode
-
-
 SetNetworkCookie:
   type: object
   properties:
@@ -212,11 +168,9 @@ SetNetworkCookie:
     sameSite:
       type: enum?
       literals:
-      - Strict
-      - Lax
-      - None
-
-
+        - Strict
+        - Lax
+        - None
 NetworkCookie:
   type: object
   properties:
@@ -230,17 +184,14 @@ NetworkCookie:
     sameSite:
       type: enum
       literals:
-      - Strict
-      - Lax
-      - None
-
-
+        - Strict
+        - Lax
+        - None
 NameValue:
   type: object
   properties:
     name: string
     value: string
-
 IndexedDBDatabase:
   type: object
   properties:
@@ -278,7 +229,6 @@ IndexedDBDatabase:
                   items: string
                 multiEntry: boolean
                 unique: boolean
-
 SetOriginStorage:
   type: object
   properties:
@@ -289,7 +239,6 @@ SetOriginStorage:
     indexedDB:
       type: array?
       items: IndexedDBDatabase
-
 OriginStorage:
   type: object
   properties:
@@ -300,7 +249,6 @@ OriginStorage:
     indexedDB:
       type: array?
       items: IndexedDBDatabase
-
 SerializedError:
   type: object
   properties:
@@ -311,8 +259,6 @@ SerializedError:
         name: string
         stack: string?
     value: SerializedValue?
-
-
 RecordHarOptions:
   type: object
   properties:
@@ -320,19 +266,17 @@ RecordHarOptions:
     content:
       type: enum?
       literals:
-      - embed
-      - attach
-      - omit
+        - embed
+        - attach
+        - omit
     mode:
       type: enum?
       literals:
-      - full
-      - minimal
+        - full
+        - minimal
     urlGlob: string?
     urlRegexSource: string?
     urlRegexFlags: string?
-
-
 FormField:
   type: object
   properties:
@@ -344,15 +288,11 @@ FormField:
         name: string
         mimeType: string?
         buffer: binary
-
 APIRequestContext:
   type: interface
-
   initializer:
     tracing: Tracing
-
   commands:
-
     fetch:
       parameters:
         url: string
@@ -379,13 +319,11 @@ APIRequestContext:
         maxRetries: number?
       returns:
         response: APIResponse
-
     fetchResponseBody:
       parameters:
         fetchUid: string
       returns:
         binary: binary?
-
     fetchLog:
       parameters:
         fetchUid: string
@@ -393,7 +331,6 @@ APIRequestContext:
         log:
           type: array
           items: string
-
     storageState:
       parameters:
         indexedDB: boolean?
@@ -404,16 +341,12 @@ APIRequestContext:
         origins:
           type: array
           items: OriginStorage
-
     disposeAPIResponse:
       parameters:
         fetchUid: string
-
     dispose:
       parameters:
         reason: string?
-
-
 APIResponse:
   type: object
   properties:
@@ -424,16 +357,13 @@ APIResponse:
     headers:
       type: array
       items: NameValue
-
-
 LifecycleEvent:
   type: enum
   literals:
-  - load
-  - domcontentloaded
-  - networkidle
-  - commit
-
+    - load
+    - domcontentloaded
+    - networkidle
+    - commit
 CommonScreenshotOptions:
   type: mixin
   properties:
@@ -441,18 +371,18 @@ CommonScreenshotOptions:
     caret:
       type: enum?
       literals:
-      - hide
-      - initial
+        - hide
+        - initial
     animations:
       type: enum?
       literals:
-      - disabled
-      - allow
+        - disabled
+        - allow
     scale:
       type: enum?
       literals:
-      - css
-      - device
+        - css
+        - device
     mask:
       type: array?
       items:
@@ -462,7 +392,6 @@ CommonScreenshotOptions:
           selector: string
     maskColor: string?
     style: string?
-
 LaunchOptions:
   type: mixin
   properties:
@@ -495,8 +424,6 @@ LaunchOptions:
     tracesDir: string?
     chromiumSandbox: boolean?
     firefoxUserPrefs: json?
-
-
 ContextOptions:
   type: mixin
   properties:
@@ -549,42 +476,42 @@ ContextOptions:
         send:
           type: enum?
           literals:
-          - always
-          - unauthorized
+            - always
+            - unauthorized
     deviceScaleFactor: number?
     isMobile: boolean?
     hasTouch: boolean?
     colorScheme:
       type: enum?
       literals:
-      - dark
-      - light
-      - no-preference
-      - no-override
+        - dark
+        - light
+        - no-preference
+        - no-override
     reducedMotion:
       type: enum?
       literals:
-      - reduce
-      - no-preference
-      - no-override
+        - reduce
+        - no-preference
+        - no-override
     forcedColors:
       type: enum?
       literals:
-      - active
-      - none
-      - no-override
+        - active
+        - none
+        - no-override
     acceptDownloads:
       type: enum?
       literals:
-      - accept
-      - deny
-      - internal-browser-default
+        - accept
+        - deny
+        - internal-browser-default
     contrast:
       type: enum?
       literals:
-      - no-preference
-      - more
-      - no-override
+        - no-preference
+        - more
+        - no-override
     baseURL: string?
     recordVideo:
       type: object?
@@ -600,12 +527,10 @@ ContextOptions:
     serviceWorkers:
       type: enum?
       literals:
-      - allow
-      - block
-
+        - allow
+        - block
 LocalUtils:
   type: interface
-
   initializer:
     deviceDescriptors:
       type: array
@@ -633,12 +558,10 @@ LocalUtils:
               defaultBrowserType:
                 type: enum
                 literals:
-                - chromium
-                - firefox
-                - webkit
-
+                  - chromium
+                  - firefox
+                  - webkit
   commands:
-
     zip:
       parameters:
         zipFile: string
@@ -652,14 +575,12 @@ LocalUtils:
             - write
             - append
         includeSources: boolean
-
     harOpen:
       parameters:
         file: string
       returns:
         harId: string?
         error: string?
-
     harLookup:
       parameters:
         harId: string
@@ -674,10 +595,10 @@ LocalUtils:
         action:
           type: enum
           literals:
-          - error
-          - redirect
-          - fulfill
-          - noentry
+            - error
+            - redirect
+            - fulfill
+            - noentry
         message: string?
         redirectURL: string?
         status: number?
@@ -685,16 +606,13 @@ LocalUtils:
           type: array?
           items: NameValue
         body: binary?
-
     harClose:
       parameters:
         harId: string
-
     harUnzip:
       parameters:
         zipFile: string
         harFile: string
-
     connect:
       parameters:
         wsEndpoint: string
@@ -708,22 +626,18 @@ LocalUtils:
         headers:
           type: array
           items: NameValue
-
     tracingStarted:
       parameters:
         tracesDir: string?
         traceName: string
       returns:
         stacksId: string
-
     addStackToTracingNoReply:
       parameters:
         callData: ClientSideCallMetadata
-
     traceDiscarded:
       parameters:
         stacksId: string
-
     globToRegex:
       parameters:
         glob: string
@@ -731,27 +645,22 @@ LocalUtils:
         webSocketUrl: boolean?
       returns:
         regex: string
-
 Root:
   type: interface
-
   commands:
-
     initialize:
       parameters:
         sdkLanguage:
           type: enum
           literals:
-          - javascript
-          - python
-          - java
-          - csharp
+            - javascript
+            - python
+            - java
+            - csharp
       returns:
         playwright: Playwright
-
 Playwright:
   type: interface
-
   initializer:
     chromium: BrowserType
     firefox: BrowserType
@@ -762,13 +671,9 @@ Playwright:
     electron: Electron
     utils: LocalUtils?
     selectors: Selectors
-    # Only present when connecting remotely via BrowserType.connect() method.
     preLaunchedBrowser: Browser?
-    # Only present when connecting remotely via Android.connect() method.
     preConnectedAndroidDevice: AndroidDevice?
-    # Only present when socks proxy is supported.
     socksSupport: SocksSupport?
-
   commands:
     newRequest:
       parameters:
@@ -799,8 +704,8 @@ Playwright:
             send:
               type: enum?
               literals:
-              - always
-              - unauthorized
+                - always
+                - unauthorized
         proxy:
           type: object?
           properties:
@@ -819,10 +724,8 @@ Playwright:
               type: array?
               items: SetOriginStorage
         tracesDir: string?
-
       returns:
         request: APIRequestContext
-
 RecorderSource:
   type: object
   properties:
@@ -840,10 +743,8 @@ RecorderSource:
           type: string
     revealLine: number?
     group: string?
-
 DebugController:
   type: interface
-
   commands:
     initialize:
       parameters:
@@ -851,21 +752,17 @@ DebugController:
         sdkLanguage:
           type: enum
           literals:
-          - javascript
-          - python
-          - java
-          - csharp
-
+            - javascript
+            - python
+            - java
+            - csharp
     setReportStateChanged:
       parameters:
         enabled: boolean
-
-    resetForReuse:
-
+    resetForReuse: null
     navigate:
       parameters:
         url: string
-
     setRecorderMode:
       parameters:
         mode:
@@ -875,35 +772,26 @@ DebugController:
             - recording
             - none
         testIdAttributeName: string?
-
     highlight:
       parameters:
         selector: string?
         ariaTemplate: string?
-
-    hideHighlight:
-
-    resume:
-
-    kill:
-
-    closeAllBrowsers:
-
+    hideHighlight: null
+    resume: null
+    kill: null
+    closeAllBrowsers: null
   events:
     inspectRequested:
       parameters:
         selector: string
         locator: string
         ariaSnapshot: string
-
     setModeRequested:
       parameters:
         mode: string
-
     stateChanged:
       parameters:
         pageCount: number
-
     sourceChanged:
       parameters:
         text: string
@@ -912,87 +800,68 @@ DebugController:
         actions:
           type: array?
           items: string
-
     paused:
       parameters:
         paused: boolean
-
 SocksSupport:
   type: interface
-
   commands:
     socksConnected:
       parameters:
         uid: string
         host: string
         port: number
-
     socksFailed:
       parameters:
         uid: string
         errorCode: string
-
     socksData:
       parameters:
         uid: string
         data: binary
-
     socksError:
       parameters:
         uid: string
         error: string
-
     socksEnd:
       parameters:
         uid: string
-
   events:
     socksRequested:
       parameters:
         uid: string
         host: string
         port: number
-
     socksData:
       parameters:
         uid: string
         data: binary
-
     socksClosed:
       parameters:
         uid: string
-
 Selectors:
   type: interface
-
   commands:
-
     register:
       parameters:
         name: string
         source: string
         contentScript: boolean?
-
     setTestIdAttributeName:
       parameters:
         testIdAttributeName: string
-
 BrowserType:
   type: interface
-
   initializer:
     executablePath: string
     name: string
-
   commands:
-
     launch:
       parameters:
         $mixin: LaunchOptions
         slowMo: number?
       returns:
         browser: Browser
-
     launchPersistentContext:
       parameters:
         $mixin1: LaunchOptions
@@ -1001,7 +870,6 @@ BrowserType:
         slowMo: number?
       returns:
         context: BrowserContext
-
     connectOverCDP:
       parameters:
         endpointURL: string
@@ -1013,26 +881,19 @@ BrowserType:
       returns:
         browser: Browser
         defaultContext: BrowserContext?
-
 Browser:
   type: interface
-
   initializer:
     version: string
     name: string
-
   commands:
-
     close:
       parameters:
         reason: string?
-
-    killForTests:
-
+    killForTests: null
     defaultUserAgentForTest:
       returns:
         userAgent: string
-
     newContext:
       parameters:
         $mixin: ContextOptions
@@ -1054,7 +915,6 @@ Browser:
               items: SetOriginStorage
       returns:
         context: BrowserContext
-
     newContextForReuse:
       parameters:
         $mixin: ContextOptions
@@ -1076,15 +936,12 @@ Browser:
               items: SetOriginStorage
       returns:
         context: BrowserContext
-
     stopPendingOperations:
       parameters:
         reason: string
-
     newBrowserCDPSession:
       returns:
         session: CDPSession
-
     startTracing:
       parameters:
         page: Page?
@@ -1092,16 +949,11 @@ Browser:
         categories:
           type: array?
           items: string
-
     stopTracing:
       returns:
         artifact: Artifact
-
-
   events:
-
-    close:
-
+    close: null
 ConsoleMessage:
   type: mixin
   properties:
@@ -1116,11 +968,8 @@ ConsoleMessage:
         url: string
         lineNumber: number
         columnNumber: number
-
-
 EventTarget:
   type: interface
-
   commands:
     waitForEventInfo:
       parameters:
@@ -1131,37 +980,30 @@ EventTarget:
             phase:
               type: enum
               literals:
-              - before
-              - after
-              - log
+                - before
+                - after
+                - log
             event: string?
             message: string?
             error: string?
       flags:
         snapshot: true
-
 BrowserContext:
   type: interface
-
   extends: EventTarget
-
   initializer:
     isChromium: boolean
     requestContext: APIRequestContext
     tracing: Tracing
-
   commands:
-
     addCookies:
       parameters:
         cookies:
           type: array
           items: SetNetworkCookie
-
     addInitScript:
       parameters:
         source: string
-
     clearCookies:
       parameters:
         name: string?
@@ -1173,13 +1015,10 @@ BrowserContext:
         path: string?
         pathRegexSource: string?
         pathRegexFlags: string?
-
-    clearPermissions:
-
+    clearPermissions: null
     close:
       parameters:
         reason: string?
-
     cookies:
       parameters:
         urls:
@@ -1189,37 +1028,30 @@ BrowserContext:
         cookies:
           type: array
           items: NetworkCookie
-
     exposeBinding:
       parameters:
         name: string
         needsHandle: boolean?
-
     grantPermissions:
       parameters:
         permissions:
           type: array
           items: string
         origin: string?
-
     newPage:
       returns:
         page: Page
-
     setDefaultNavigationTimeoutNoReply:
       parameters:
         timeout: number?
-
     setDefaultTimeoutNoReply:
       parameters:
         timeout: number?
-
     setExtraHTTPHeaders:
       parameters:
         headers:
           type: array
           items: NameValue
-
     setGeolocation:
       parameters:
         geolocation:
@@ -1228,7 +1060,6 @@ BrowserContext:
             longitude: number
             latitude: number
             accuracy: number?
-
     setHTTPCredentials:
       parameters:
         httpCredentials:
@@ -1237,7 +1068,6 @@ BrowserContext:
             username: string
             password: string
             origin: string?
-
     setNetworkInterceptionPatterns:
       parameters:
         patterns:
@@ -1248,7 +1078,6 @@ BrowserContext:
               glob: string?
               regexSource: string?
               regexFlags: string?
-
     setWebSocketInterceptionPatterns:
       parameters:
         patterns:
@@ -1259,11 +1088,9 @@ BrowserContext:
               glob: string?
               regexSource: string?
               regexFlags: string?
-
     setOffline:
       parameters:
         offline: boolean
-
     storageState:
       parameters:
         indexedDB: boolean?
@@ -1274,19 +1101,17 @@ BrowserContext:
         origins:
           type: array
           items: OriginStorage
-
     pause:
-      experimental: True
-
+      experimental: true
     enableRecorder:
-      experimental: True
+      experimental: true
       parameters:
         language: string?
         mode:
           type: enum?
           literals:
-          - inspecting
-          - recording
+            - inspecting
+            - recording
         pauseOnNextStatement: boolean?
         testIdAttributeName: string?
         launchOptions: json?
@@ -1296,27 +1121,23 @@ BrowserContext:
         outputFile: string?
         handleSIGINT: boolean?
         omitCallTracking: boolean?
-
     newCDPSession:
       parameters:
         page: Page?
         frame: Frame?
       returns:
         session: CDPSession
-
     harStart:
       parameters:
         page: Page?
         options: RecordHarOptions
       returns:
         harId: string
-
     harExport:
       parameters:
         harId: string?
       returns:
         artifact: Artifact
-
     createTempFiles:
       parameters:
         rootDirName: string?
@@ -1332,127 +1153,100 @@ BrowserContext:
         writableStreams:
           type: array
           items: WritableStream
-
     updateSubscription:
       parameters:
         event:
           type: enum
           literals:
-          - console
-          - dialog
-          - request
-          - response
-          - requestFinished
-          - requestFailed
+            - console
+            - dialog
+            - request
+            - response
+            - requestFinished
+            - requestFailed
         enabled: boolean
-
     clockFastForward:
       parameters:
         ticksNumber: number?
         ticksString: string?
-
     clockInstall:
       parameters:
         timeNumber: number?
         timeString: string?
-
     clockPauseAt:
       parameters:
         timeNumber: number?
         timeString: string?
-
-    clockResume:
-
+    clockResume: null
     clockRunFor:
       parameters:
         ticksNumber: number?
         ticksString: string?
-
     clockSetFixedTime:
       parameters:
         timeNumber: number?
         timeString: string?
-
     clockSetSystemTime:
       parameters:
         timeNumber: number?
         timeString: string?
-
   events:
-
     bindingCall:
       parameters:
         binding: BindingCall
-
     console:
       parameters:
         $mixin: ConsoleMessage
         page: Page
-
-    close:
-
+    close: null
     dialog:
       parameters:
         dialog: Dialog
-
     page:
       parameters:
         page: Page
-
     pageError:
       parameters:
         error: SerializedError
         page: Page
-
     route:
       parameters:
         route: Route
-
     webSocketRoute:
       parameters:
         webSocketRoute: WebSocketRoute
-
     video:
       parameters:
         artifact: Artifact
-
     backgroundPage:
       parameters:
         page: Page
-
     serviceWorker:
       parameters:
         worker: Worker
-
     request:
       parameters:
         request: Request
         page: Page?
-
     requestFailed:
       parameters:
         request: Request
         failureText: string?
         responseEndTiming: number
         page: Page?
-
     requestFinished:
       parameters:
         request: Request
         response: Response?
         responseEndTiming: number
         page: Page?
-
     response:
       parameters:
         response: Response
         page: Page?
-
 Page:
   type: interface
-
   extends: EventTarget
-
   initializer:
     mainFrame: Frame
     viewportSize:
@@ -1462,67 +1256,59 @@ Page:
         height: number
     isClosed: boolean
     opener: Page?
-
   commands:
-
     setDefaultNavigationTimeoutNoReply:
       parameters:
         timeout: number?
-
     setDefaultTimeoutNoReply:
       parameters:
         timeout: number?
-
     addInitScript:
       parameters:
         source: string
-
     close:
       parameters:
         runBeforeUnload: boolean?
         reason: string?
-
     emulateMedia:
       parameters:
         media:
           type: enum?
           literals:
-          - screen
-          - print
-          - no-override
+            - screen
+            - print
+            - no-override
         colorScheme:
           type: enum?
           literals:
-          - dark
-          - light
-          - no-preference
-          - no-override
+            - dark
+            - light
+            - no-preference
+            - no-override
         reducedMotion:
           type: enum?
           literals:
-          - reduce
-          - no-preference
-          - no-override
+            - reduce
+            - no-preference
+            - no-override
         forcedColors:
           type: enum?
           literals:
-          - active
-          - none
-          - no-override
+            - active
+            - none
+            - no-override
         contrast:
           type: enum?
           literals:
-          - no-preference
-          - more
-          - no-override
+            - no-preference
+            - more
+            - no-override
       flags:
         snapshot: true
-
     exposeBinding:
       parameters:
         name: string
         needsHandle: boolean?
-
     goBack:
       parameters:
         timeout: number?
@@ -1532,7 +1318,6 @@ Page:
       flags:
         slowMo: true
         snapshot: true
-
     goForward:
       parameters:
         timeout: number?
@@ -1542,25 +1327,20 @@ Page:
       flags:
         slowMo: true
         snapshot: true
-
-    requestGC:
-
+    requestGC: null
     registerLocatorHandler:
       parameters:
         selector: string
         noWaitAfter: boolean?
       returns:
         uid: number
-
     resolveLocatorHandlerNoReply:
       parameters:
         uid: number
         remove: boolean?
-
     unregisterLocatorHandler:
       parameters:
         uid: number
-
     reload:
       parameters:
         timeout: number?
@@ -1570,7 +1350,6 @@ Page:
       flags:
         slowMo: true
         snapshot: true
-
     expectScreenshot:
       parameters:
         expected: binary?
@@ -1599,15 +1378,14 @@ Page:
           items: string
       flags:
         snapshot: true
-
     screenshot:
       parameters:
         timeout: number?
         type:
           type: enum?
           literals:
-          - png
-          - jpeg
+            - png
+            - jpeg
         quality: number?
         fullPage: boolean?
         clip: Rect?
@@ -1616,13 +1394,11 @@ Page:
         binary: binary
       flags:
         snapshot: true
-
     setExtraHTTPHeaders:
       parameters:
         headers:
           type: array
           items: NameValue
-
     setNetworkInterceptionPatterns:
       parameters:
         patterns:
@@ -1633,7 +1409,6 @@ Page:
               glob: string?
               regexSource: string?
               regexFlags: string?
-
     setWebSocketInterceptionPatterns:
       parameters:
         patterns:
@@ -1644,7 +1419,6 @@ Page:
               glob: string?
               regexSource: string?
               regexFlags: string?
-
     setViewportSize:
       parameters:
         viewportSize:
@@ -1654,28 +1428,24 @@ Page:
             height: number
       flags:
         snapshot: true
-
     keyboardDown:
       parameters:
         key: string
       flags:
         slowMo: true
         snapshot: true
-
     keyboardUp:
       parameters:
         key: string
       flags:
         slowMo: true
         snapshot: true
-
     keyboardInsertText:
       parameters:
         text: string
       flags:
         slowMo: true
         snapshot: true
-
     keyboardType:
       parameters:
         text: string
@@ -1683,7 +1453,6 @@ Page:
       flags:
         slowMo: true
         snapshot: true
-
     keyboardPress:
       parameters:
         key: string
@@ -1691,7 +1460,6 @@ Page:
       flags:
         slowMo: true
         snapshot: true
-
     mouseMove:
       parameters:
         x: number
@@ -1700,33 +1468,30 @@ Page:
       flags:
         slowMo: true
         snapshot: true
-
     mouseDown:
       parameters:
         button:
           type: enum?
           literals:
-          - left
-          - right
-          - middle
+            - left
+            - right
+            - middle
         clickCount: number?
       flags:
         slowMo: true
         snapshot: true
-
     mouseUp:
       parameters:
         button:
           type: enum?
           literals:
-          - left
-          - right
-          - middle
+            - left
+            - right
+            - middle
         clickCount: number?
       flags:
         slowMo: true
         snapshot: true
-
     mouseClick:
       parameters:
         x: number
@@ -1735,14 +1500,13 @@ Page:
         button:
           type: enum?
           literals:
-          - left
-          - right
-          - middle
+            - left
+            - right
+            - middle
         clickCount: number?
       flags:
         slowMo: true
         snapshot: true
-
     mouseWheel:
       parameters:
         deltaX: number
@@ -1750,7 +1514,6 @@ Page:
       flags:
         slowMo: true
         snapshot: true
-
     touchscreenTap:
       parameters:
         x: number
@@ -1758,7 +1521,6 @@ Page:
       flags:
         slowMo: true
         snapshot: true
-
     accessibilitySnapshot:
       parameters:
         interestingOnly: boolean?
@@ -1767,7 +1529,6 @@ Page:
         rootAXNode: AXNode?
       flags:
         snapshot: true
-
     pdf:
       parameters:
         scale: number?
@@ -1792,12 +1553,10 @@ Page:
         outline: boolean?
       returns:
         pdf: binary
-
     startJSCoverage:
       parameters:
         resetOnNavigation: boolean?
         reportAnonymousScripts: boolean?
-
     stopJSCoverage:
       returns:
         entries:
@@ -1823,11 +1582,9 @@ Page:
                           startOffset: number
                           endOffset: number
                           count: number
-
     startCSSCoverage:
       parameters:
         resetOnNavigation: boolean?
-
     stopCSSCoverage:
       returns:
         entries:
@@ -1844,81 +1601,61 @@ Page:
                   properties:
                     start: number
                     end: number
-
-    bringToFront:
-
+    bringToFront: null
     updateSubscription:
       parameters:
         event:
           type: enum
           literals:
-          - console
-          - dialog
-          - fileChooser
-          - request
-          - response
-          - requestFinished
-          - requestFailed
+            - console
+            - dialog
+            - fileChooser
+            - request
+            - response
+            - requestFinished
+            - requestFailed
         enabled: boolean
-
   events:
-
     bindingCall:
       parameters:
         binding: BindingCall
-
-    close:
-
-    crash:
-
+    close: null
+    crash: null
     download:
       parameters:
         url: string
         suggestedFilename: string
         artifact: Artifact
-
     fileChooser:
       parameters:
         element: ElementHandle
         isMultiple: boolean
-
     frameAttached:
       parameters:
         frame: Frame
-
     frameDetached:
       parameters:
         frame: Frame
-
     locatorHandlerTriggered:
       parameters:
         uid: number
-
     route:
       parameters:
         route: Route
-
     webSocketRoute:
       parameters:
         webSocketRoute: WebSocketRoute
-
     video:
       parameters:
         artifact: Artifact
-
     webSocket:
       parameters:
         webSocket: WebSocket
-
     worker:
       parameters:
         worker: Worker
-
-
-
 Frame:
   type: interface
-
   initializer:
     url: string
     name: string
@@ -1926,9 +1663,7 @@ Frame:
     loadStates:
       type: array
       items: LifecycleEvent
-
   commands:
-
     evalOnSelector:
       parameters:
         selector: string
@@ -1940,7 +1675,6 @@ Frame:
         value: SerializedValue
       flags:
         snapshot: true
-
     evalOnSelectorAll:
       parameters:
         selector: string
@@ -1951,7 +1685,6 @@ Frame:
         value: SerializedValue
       flags:
         snapshot: true
-
     addScriptTag:
       parameters:
         url: string?
@@ -1961,7 +1694,6 @@ Frame:
         element: ElementHandle
       flags:
         snapshot: true
-
     addStyleTag:
       parameters:
         url: string?
@@ -1970,7 +1702,6 @@ Frame:
         element: ElementHandle
       flags:
         snapshot: true
-
     ariaSnapshot:
       parameters:
         selector: string
@@ -1978,14 +1709,13 @@ Frame:
         mode:
           type: enum?
           literals:
-          - raw
-          - regex
+            - raw
+            - regex
         timeout: number?
       returns:
         snapshot: string
       flags:
         snapshot: true
-
     blur:
       parameters:
         selector: string
@@ -1994,7 +1724,6 @@ Frame:
       flags:
         slowMo: true
         snapshot: true
-
     check:
       parameters:
         selector: string
@@ -2007,7 +1736,6 @@ Frame:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     click:
       parameters:
         selector: string
@@ -2019,19 +1747,19 @@ Frame:
           items:
             type: enum
             literals:
-            - Alt
-            - Control
-            - ControlOrMeta
-            - Meta
-            - Shift
+              - Alt
+              - Control
+              - ControlOrMeta
+              - Meta
+              - Shift
         position: Point?
         delay: number?
         button:
           type: enum?
           literals:
-          - left
-          - right
-          - middle
+            - left
+            - right
+            - middle
         clickCount: number?
         timeout: number?
         trial: boolean?
@@ -2039,13 +1767,11 @@ Frame:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     content:
       returns:
         value: string
       flags:
         snapshot: true
-
     dragAndDrop:
       parameters:
         source: string
@@ -2060,7 +1786,6 @@ Frame:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     dblclick:
       parameters:
         selector: string
@@ -2071,26 +1796,25 @@ Frame:
           items:
             type: enum
             literals:
-            - Alt
-            - Control
-            - ControlOrMeta
-            - Meta
-            - Shift
+              - Alt
+              - Control
+              - ControlOrMeta
+              - Meta
+              - Shift
         position: Point?
         delay: number?
         button:
           type: enum?
           literals:
-          - left
-          - right
-          - middle
+            - left
+            - right
+            - middle
         timeout: number?
         trial: boolean?
       flags:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     dispatchEvent:
       parameters:
         selector: string
@@ -2101,27 +1825,26 @@ Frame:
       flags:
         slowMo: true
         snapshot: true
-
     evaluateExpression:
       parameters:
         expression: string
         isFunction: boolean?
         arg: SerializedArgument
+        isolatedContext: boolean?
       returns:
         value: SerializedValue
       flags:
         snapshot: true
-
     evaluateExpressionHandle:
       parameters:
         expression: string
         isFunction: boolean?
         arg: SerializedArgument
+        isolatedContext: boolean?
       returns:
         handle: JSHandle
       flags:
         snapshot: true
-
     fill:
       parameters:
         selector: string
@@ -2133,7 +1856,6 @@ Frame:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     focus:
       parameters:
         selector: string
@@ -2142,15 +1864,12 @@ Frame:
       flags:
         slowMo: true
         snapshot: true
-
     frameElement:
       returns:
         element: ElementHandle
-
     highlight:
       parameters:
         selector: string
-
     getAttribute:
       parameters:
         selector: string
@@ -2161,7 +1880,6 @@ Frame:
         value: string?
       flags:
         snapshot: true
-
     goto:
       parameters:
         url: string
@@ -2173,7 +1891,6 @@ Frame:
       flags:
         slowMo: true
         snapshot: true
-
     hover:
       parameters:
         selector: string
@@ -2184,11 +1901,11 @@ Frame:
           items:
             type: enum
             literals:
-            - Alt
-            - Control
-            - ControlOrMeta
-            - Meta
-            - Shift
+              - Alt
+              - Control
+              - ControlOrMeta
+              - Meta
+              - Shift
         position: Point?
         timeout: number?
         trial: boolean?
@@ -2196,7 +1913,6 @@ Frame:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     innerHTML:
       parameters:
         selector: string
@@ -2206,7 +1922,6 @@ Frame:
         value: string
       flags:
         snapshot: true
-
     innerText:
       parameters:
         selector: string
@@ -2216,7 +1931,6 @@ Frame:
         value: string
       flags:
         snapshot: true
-
     inputValue:
       parameters:
         selector: string
@@ -2226,7 +1940,6 @@ Frame:
         value: string
       flags:
         snapshot: true
-
     isChecked:
       parameters:
         selector: string
@@ -2236,7 +1949,6 @@ Frame:
         value: boolean
       flags:
         snapshot: true
-
     isDisabled:
       parameters:
         selector: string
@@ -2246,7 +1958,6 @@ Frame:
         value: boolean
       flags:
         snapshot: true
-
     isEnabled:
       parameters:
         selector: string
@@ -2256,7 +1967,6 @@ Frame:
         value: boolean
       flags:
         snapshot: true
-
     isHidden:
       parameters:
         selector: string
@@ -2265,7 +1975,6 @@ Frame:
         value: boolean
       flags:
         snapshot: true
-
     isVisible:
       parameters:
         selector: string
@@ -2274,7 +1983,6 @@ Frame:
         value: boolean
       flags:
         snapshot: true
-
     isEditable:
       parameters:
         selector: string
@@ -2284,7 +1992,6 @@ Frame:
         value: boolean
       flags:
         snapshot: true
-
     press:
       parameters:
         selector: string
@@ -2297,7 +2004,6 @@ Frame:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     querySelector:
       parameters:
         selector: string
@@ -2306,7 +2012,6 @@ Frame:
         element: ElementHandle?
       flags:
         snapshot: true
-
     querySelectorAll:
       parameters:
         selector: string
@@ -2316,7 +2021,6 @@ Frame:
           items: ElementHandle
       flags:
         snapshot: true
-
     queryCount:
       parameters:
         selector: string
@@ -2324,7 +2028,6 @@ Frame:
         value: number
       flags:
         snapshot: true
-
     selectOption:
       parameters:
         selector: string
@@ -2351,7 +2054,6 @@ Frame:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     setContent:
       parameters:
         html: string
@@ -2359,12 +2061,10 @@ Frame:
         waitUntil: LifecycleEvent?
       flags:
         snapshot: true
-
     setInputFiles:
       parameters:
         selector: string
         strict: boolean?
-        # Only one of payloads, localPaths and streams should be present.
         payloads:
           type: array?
           items:
@@ -2386,7 +2086,6 @@ Frame:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     tap:
       parameters:
         selector: string
@@ -2397,11 +2096,11 @@ Frame:
           items:
             type: enum
             literals:
-            - Alt
-            - Control
-            - ControlOrMeta
-            - Meta
-            - Shift
+              - Alt
+              - Control
+              - ControlOrMeta
+              - Meta
+              - Shift
         position: Point?
         timeout: number?
         trial: boolean?
@@ -2409,7 +2108,6 @@ Frame:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     textContent:
       parameters:
         selector: string
@@ -2419,11 +2117,9 @@ Frame:
         value: string?
       flags:
         snapshot: true
-
     title:
       returns:
         value: string
-
     type:
       parameters:
         selector: string
@@ -2435,7 +2131,6 @@ Frame:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     uncheck:
       parameters:
         selector: string
@@ -2448,26 +2143,22 @@ Frame:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     waitForTimeout:
       parameters:
         timeout: number
       flags:
         snapshot: true
-
     waitForFunction:
       parameters:
         expression: string
         isFunction: boolean?
         arg: SerializedArgument
         timeout: number?
-        # When present, polls on interval. Otherwise, polls on raf.
         pollingInterval: number?
       returns:
         handle: JSHandle
       flags:
         snapshot: true
-
     waitForSelector:
       parameters:
         selector: string
@@ -2476,16 +2167,15 @@ Frame:
         state:
           type: enum?
           literals:
-          - attached
-          - detached
-          - visible
-          - hidden
+            - attached
+            - detached
+            - visible
+            - hidden
         omitReturnValue: boolean?
       returns:
         element: ElementHandle?
       flags:
         snapshot: true
-
     expect:
       parameters:
         selector: string
@@ -2508,14 +2198,11 @@ Frame:
           items: string
       flags:
         snapshot: true
-
   events:
-
     loadstate:
       parameters:
         add: LifecycleEvent?
         remove: LifecycleEvent?
-
     navigated:
       parameters:
         url: string
@@ -2525,68 +2212,55 @@ Frame:
           properties:
             request: Request?
         error: string?
-
-
-
 Worker:
   type: interface
-
   initializer:
     url: string
-
   commands:
-
     evaluateExpression:
       parameters:
         expression: string
         isFunction: boolean?
         arg: SerializedArgument
+        isolatedContext: boolean?
       returns:
         value: SerializedValue
-
     evaluateExpressionHandle:
       parameters:
         expression: string
         isFunction: boolean?
         arg: SerializedArgument
+        isolatedContext: boolean?
       returns:
         handle: JSHandle
-
   events:
-
-    close:
-
-
+    close: null
 JSHandle:
   type: interface
-
   initializer:
     preview: string
-
   commands:
-
-    dispose:
-
+    dispose: null
     evaluateExpression:
       parameters:
         expression: string
         isFunction: boolean?
         arg: SerializedArgument
+        isolatedContext: boolean?
       returns:
         value: SerializedValue
       flags:
         snapshot: true
-
     evaluateExpressionHandle:
       parameters:
         expression: string
         isFunction: boolean?
         arg: SerializedArgument
+        isolatedContext: boolean?
       returns:
         handle: JSHandle
       flags:
         snapshot: true
-
     getPropertyList:
       returns:
         properties:
@@ -2596,32 +2270,22 @@ JSHandle:
             properties:
               name: string
               value: JSHandle
-
     getProperty:
       parameters:
         name: string
       returns:
         handle: JSHandle
-
     jsonValue:
       returns:
         value: SerializedValue
-
   events:
-
     previewUpdated:
       parameters:
         preview: string
-
-
-
 ElementHandle:
   type: interface
-
   extends: JSHandle
-
   commands:
-
     evalOnSelector:
       parameters:
         selector: string
@@ -2633,7 +2297,6 @@ ElementHandle:
         value: SerializedValue
       flags:
         snapshot: true
-
     evalOnSelectorAll:
       parameters:
         selector: string
@@ -2644,13 +2307,11 @@ ElementHandle:
         value: SerializedValue
       flags:
         snapshot: true
-
     boundingBox:
       returns:
         value: Rect?
       flags:
         snapshot: true
-
     check:
       parameters:
         force: boolean?
@@ -2661,7 +2322,6 @@ ElementHandle:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     click:
       parameters:
         force: boolean?
@@ -2671,19 +2331,19 @@ ElementHandle:
           items:
             type: enum
             literals:
-            - Alt
-            - Control
-            - ControlOrMeta
-            - Meta
-            - Shift
+              - Alt
+              - Control
+              - ControlOrMeta
+              - Meta
+              - Shift
         position: Point?
         delay: number?
         button:
           type: enum?
           literals:
-          - left
-          - right
-          - middle
+            - left
+            - right
+            - middle
         clickCount: number?
         timeout: number?
         trial: boolean?
@@ -2691,13 +2351,11 @@ ElementHandle:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     contentFrame:
       returns:
         frame: Frame?
       flags:
         snapshot: true
-
     dblclick:
       parameters:
         force: boolean?
@@ -2706,26 +2364,25 @@ ElementHandle:
           items:
             type: enum
             literals:
-            - Alt
-            - Control
-            - ControlOrMeta
-            - Meta
-            - Shift
+              - Alt
+              - Control
+              - ControlOrMeta
+              - Meta
+              - Shift
         position: Point?
         delay: number?
         button:
           type: enum?
           literals:
-          - left
-          - right
-          - middle
+            - left
+            - right
+            - middle
         timeout: number?
         trial: boolean?
       flags:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     dispatchEvent:
       parameters:
         type: string
@@ -2733,7 +2390,6 @@ ElementHandle:
       flags:
         slowMo: true
         snapshot: true
-
     fill:
       parameters:
         value: string
@@ -2743,22 +2399,18 @@ ElementHandle:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     focus:
       flags:
         slowMo: true
         snapshot: true
-
     generateLocatorString:
       returns:
         value: string?
-
     getAttribute:
       parameters:
         name: string
       returns:
         value: string?
-
     hover:
       parameters:
         force: boolean?
@@ -2767,11 +2419,11 @@ ElementHandle:
           items:
             type: enum
             literals:
-            - Alt
-            - Control
-            - ControlOrMeta
-            - Meta
-            - Shift
+              - Alt
+              - Control
+              - ControlOrMeta
+              - Meta
+              - Shift
         position: Point?
         timeout: number?
         trial: boolean?
@@ -2779,65 +2431,54 @@ ElementHandle:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     innerHTML:
       returns:
         value: string
       flags:
         snapshot: true
-
     innerText:
       returns:
         value: string
       flags:
         snapshot: true
-
     inputValue:
       returns:
         value: string
       flags:
         snapshot: true
-
     isChecked:
       returns:
         value: boolean
       flags:
         snapshot: true
-
     isDisabled:
       returns:
         value: boolean
       flags:
         snapshot: true
-
     isEditable:
       returns:
         value: boolean
       flags:
         snapshot: true
-
     isEnabled:
       returns:
         value: boolean
       flags:
         snapshot: true
-
     isHidden:
       returns:
         value: boolean
       flags:
         snapshot: true
-
     isVisible:
       returns:
         value: boolean
       flags:
         snapshot: true
-
     ownerFrame:
       returns:
         frame: Frame?
-
     press:
       parameters:
         key: string
@@ -2848,7 +2489,6 @@ ElementHandle:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     querySelector:
       parameters:
         selector: string
@@ -2857,7 +2497,6 @@ ElementHandle:
         element: ElementHandle?
       flags:
         snapshot: true
-
     querySelectorAll:
       parameters:
         selector: string
@@ -2867,29 +2506,26 @@ ElementHandle:
           items: ElementHandle
       flags:
         snapshot: true
-
     screenshot:
       parameters:
         timeout: number?
         type:
           type: enum?
           literals:
-          - png
-          - jpeg
+            - png
+            - jpeg
         quality: number?
         $mixin: CommonScreenshotOptions
       returns:
         binary: binary
       flags:
         snapshot: true
-
     scrollIntoViewIfNeeded:
       parameters:
         timeout: number?
       flags:
         slowMo: true
         snapshot: true
-
     selectOption:
       parameters:
         elements:
@@ -2914,7 +2550,6 @@ ElementHandle:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     selectText:
       parameters:
         force: boolean?
@@ -2922,10 +2557,8 @@ ElementHandle:
       flags:
         slowMo: true
         snapshot: true
-
     setInputFiles:
       parameters:
-        # Only one of payloads, localPaths and streams should be present.
         payloads:
           type: array?
           items:
@@ -2947,7 +2580,6 @@ ElementHandle:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     tap:
       parameters:
         force: boolean?
@@ -2956,11 +2588,11 @@ ElementHandle:
           items:
             type: enum
             literals:
-            - Alt
-            - Control
-            - ControlOrMeta
-            - Meta
-            - Shift
+              - Alt
+              - Control
+              - ControlOrMeta
+              - Meta
+              - Shift
         position: Point?
         timeout: number?
         trial: boolean?
@@ -2968,13 +2600,11 @@ ElementHandle:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     textContent:
       returns:
         value: string?
       flags:
         snapshot: true
-
     type:
       parameters:
         text: string
@@ -2984,7 +2614,6 @@ ElementHandle:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     uncheck:
       parameters:
         force: boolean?
@@ -2995,22 +2624,20 @@ ElementHandle:
         slowMo: true
         snapshot: true
         pausesBeforeInput: true
-
     waitForElementState:
       parameters:
         state:
           type: enum
           literals:
-          - visible
-          - hidden
-          - stable
-          - enabled
-          - disabled
-          - editable
+            - visible
+            - hidden
+            - stable
+            - enabled
+            - disabled
+            - editable
         timeout: number?
       flags:
         snapshot: true
-
     waitForSelector:
       parameters:
         selector: string
@@ -3019,19 +2646,16 @@ ElementHandle:
         state:
           type: enum?
           literals:
-          - attached
-          - detached
-          - visible
-          - hidden
+            - attached
+            - detached
+            - visible
+            - hidden
       returns:
         element: ElementHandle?
       flags:
         snapshot: true
-
-
 Request:
   type: interface
-
   initializer:
     frame: Frame?
     serviceWorker: Worker?
@@ -3044,36 +2668,26 @@ Request:
       items: NameValue
     isNavigationRequest: boolean
     redirectedFrom: Request?
-
   commands:
-
     response:
       returns:
         response: Response?
-
     rawRequestHeaders:
       returns:
         headers:
           type: array
           items: NameValue
-
-
 Route:
   type: interface
-
   initializer:
     request: Request
-
   commands:
-
     redirectNavigationRequest:
       parameters:
         url: string
-
     abort:
       parameters:
         errorCode: string?
-
     continue:
       parameters:
         url: string?
@@ -3083,10 +2697,8 @@ Route:
           items: NameValue
         postData: binary?
         isFallback: boolean
-
     fulfill:
       parameters:
-        # default is 200
         status: number?
         headers:
           type: array?
@@ -3094,67 +2706,50 @@ Route:
         body: string?
         isBase64: boolean?
         fetchResponseUid: string?
-
-
 WebSocketRoute:
   type: interface
-
   initializer:
     url: string
-
   commands:
-
-    connect:
-
-    ensureOpened:
-
+    connect: null
+    ensureOpened: null
     sendToPage:
       parameters:
         message: string
         isBase64: boolean
-
     sendToServer:
       parameters:
         message: string
         isBase64: boolean
-
     closePage:
       parameters:
         code: number?
         reason: string?
         wasClean: boolean
-
     closeServer:
       parameters:
         code: number?
         reason: string?
         wasClean: boolean
-
   events:
-
     messageFromPage:
       parameters:
         message: string
         isBase64: boolean
-
     messageFromServer:
       parameters:
         message: string
         isBase64: boolean
-
     closePage:
       parameters:
         code: number?
         reason: string?
         wasClean: boolean
-
     closeServer:
       parameters:
         code: number?
         reason: string?
         wasClean: boolean
-
-
 ResourceTiming:
   type: object
   properties:
@@ -3166,10 +2761,8 @@ ResourceTiming:
     connectEnd: number
     requestStart: number
     responseStart: number
-
 Response:
   type: interface
-
   initializer:
     request: Request
     url: string
@@ -3180,33 +2773,24 @@ Response:
       items: NameValue
     timing: ResourceTiming
     fromServiceWorker: boolean
-
-
   commands:
-
     body:
       returns:
         binary: binary
-
     securityDetails:
       returns:
         value: SecurityDetails?
-
     serverAddr:
       returns:
         value: RemoteAddr?
-
     rawResponseHeaders:
       returns:
         headers:
           type: array
           items: NameValue
-
     sizes:
       returns:
         sizes: RequestSizes
-
-
 SecurityDetails:
   type: object
   properties:
@@ -3215,7 +2799,6 @@ SecurityDetails:
     subjectName: string?
     validFrom: number?
     validTo: number?
-
 RequestSizes:
   type: object
   properties:
@@ -3223,46 +2806,32 @@ RequestSizes:
     requestHeadersSize: number
     responseBodySize: number
     responseHeadersSize: number
-
-
 RemoteAddr:
   type: object
   properties:
     ipAddress: string
     port: number
-
-
 WebSocket:
   type: interface
-
   extends: EventTarget
-
   initializer:
     url: string
-
   events:
-    open:
-
+    open: null
     frameSent:
       parameters:
         opcode: number
         data: string
-
     frameReceived:
       parameters:
         opcode: number
         data: string
-
     socketError:
       parameters:
         error: string
-
-    close:
-
-
+    close: null
 BindingCall:
   type: interface
-
   initializer:
     frame: Frame
     name: string
@@ -3270,56 +2839,40 @@ BindingCall:
       type: array?
       items: SerializedValue
     handle: JSHandle?
-
   commands:
-
     reject:
       parameters:
         error: SerializedError
-
     resolve:
       parameters:
         result: SerializedArgument
-
-
-
 Dialog:
   type: interface
-
   initializer:
     page: Page?
     type: string
     message: string
     defaultValue: string
-
   commands:
-
     accept:
       parameters:
         promptText: string?
-
-    dismiss:
-
-
+    dismiss: null
 Tracing:
   type: interface
-
   commands:
-
     tracingStart:
       parameters:
         name: string?
         snapshots: boolean?
         screenshots: boolean?
         live: boolean?
-
     tracingStartChunk:
       parameters:
         name: string?
         title: string?
       returns:
         traceName: string
-
     tracingGroup:
       parameters:
         name: string
@@ -3329,117 +2882,77 @@ Tracing:
             file: string
             line: number?
             column: number?
-
-    tracingGroupEnd:
-
+    tracingGroupEnd: null
     tracingStopChunk:
       parameters:
         mode:
           type: enum
           literals:
-          - archive
-          - discard
-          - entries
+            - archive
+            - discard
+            - entries
       returns:
-        # The artifact may be missing if the browser closes while tracing is being stopped.
-        # Or it can be missing if client-side compression is taking place.
         artifact: Artifact?
-        # For local mode, these are all entries.
         entries:
           type: array?
           items: NameValue
-
-    tracingStop:
-
-
+    tracingStop: null
 Artifact:
   type: interface
-
   initializer:
     absolutePath: string
-
   commands:
-
     pathAfterFinished:
       returns:
         value: string
-
-    # Blocks path/failure/delete/context.close until saved to the local |path|.
     saveAs:
       parameters:
         path: string
-
-    # Blocks path/failure/delete/context.close until the stream is closed.
     saveAsStream:
       returns:
         stream: Stream
-
     failure:
       returns:
         error: string?
-
     stream:
       returns:
         stream: Stream
-
-    cancel:
-
-    delete:
-
-
+    cancel: null
+    delete: null
 Stream:
   type: interface
-
   commands:
-
     read:
       parameters:
         size: number?
       returns:
         binary: binary
-
-    close:
-
-
+    close: null
 WritableStream:
   type: interface
-
   commands:
-
     write:
       parameters:
         binary: binary
-
-    close:
-
-
+    close: null
 CDPSession:
   type: interface
-
   commands:
-
     send:
       parameters:
         method: string
         params: json?
       returns:
         result: json
-
-    detach:
-
+    detach: null
   events:
-
     event:
       parameters:
         method: string
         params: json?
-
-
 Electron:
   type: interface
-
   commands:
-
     launch:
       parameters:
         executablePath: string?
@@ -3454,17 +2967,17 @@ Electron:
         acceptDownloads:
           type: enum?
           literals:
-          - accept
-          - deny
-          - internal-browser-default
+            - accept
+            - deny
+            - internal-browser-default
         bypassCSP: boolean?
         colorScheme:
           type: enum?
           literals:
-          - dark
-          - light
-          - no-preference
-          - no-override
+            - dark
+            - light
+            - no-preference
+            - no-override
         extraHTTPHeaders:
           type: array?
           items: NameValue
@@ -3496,27 +3009,19 @@ Electron:
         strictSelectors: boolean?
         timezoneId: string?
         tracesDir: string?
-
       returns:
         electronApplication: ElectronApplication
-
-
 ElectronApplication:
   type: interface
-
   extends: EventTarget
-
   initializer:
     context: BrowserContext
-
   commands:
-
     browserWindow:
       parameters:
         page: Page
       returns:
         handle: JSHandle
-
     evaluateExpression:
       parameters:
         expression: string
@@ -3524,7 +3029,6 @@ ElectronApplication:
         arg: SerializedArgument
       returns:
         value: SerializedValue
-
     evaluateExpressionHandle:
       parameters:
         expression: string
@@ -3532,26 +3036,21 @@ ElectronApplication:
         arg: SerializedArgument
       returns:
         handle: JSHandle
-
     updateSubscription:
       parameters:
         event:
           type: enum
           literals:
-          - console
+            - console
         enabled: boolean
-
   events:
-    close:
+    close: null
     console:
       parameters:
         $mixin: ConsoleMessage
-
 Android:
   type: interface
-
   commands:
-
     devices:
       parameters:
         host: string?
@@ -3561,36 +3060,27 @@ Android:
         devices:
           type: array
           items: AndroidDevice
-
     setDefaultTimeoutNoReply:
       parameters:
         timeout: number
-
 AndroidSocket:
   type: interface
-
   commands:
     write:
       parameters:
         data: binary
-
-    close:
-
+    close: null
   events:
     data:
       parameters:
         data: binary
-    close:
-
+    close: null
 AndroidDevice:
   type: interface
-
   extends: EventTarget
-
   initializer:
     model: string
     serial: string
-
   commands:
     wait:
       parameters:
@@ -3598,123 +3088,106 @@ AndroidDevice:
         state:
           type: enum?
           literals:
-          - gone
+            - gone
         timeout: number?
-
     fill:
       parameters:
         selector: AndroidSelector
         text: string
         timeout: number?
-
     tap:
       parameters:
         selector: AndroidSelector
         duration: number?
         timeout: number?
-
     drag:
       parameters:
         selector: AndroidSelector
         dest: Point
         speed: number?
         timeout: number?
-
     fling:
       parameters:
         selector: AndroidSelector
         direction:
           type: enum
           literals:
-          - up
-          - down
-          - left
-          - right
+            - up
+            - down
+            - left
+            - right
         speed: number?
         timeout: number?
-
     longTap:
       parameters:
         selector: AndroidSelector
         timeout: number?
-
     pinchClose:
       parameters:
         selector: AndroidSelector
         percent: number
         speed: number?
         timeout: number?
-
     pinchOpen:
       parameters:
         selector: AndroidSelector
         percent: number
         speed: number?
         timeout: number?
-
     scroll:
       parameters:
         selector: AndroidSelector
         direction:
           type: enum
           literals:
-          - up
-          - down
-          - left
-          - right
+            - up
+            - down
+            - left
+            - right
         percent: number
         speed: number?
         timeout: number?
-
     swipe:
       parameters:
         selector: AndroidSelector
         direction:
           type: enum
           literals:
-          - up
-          - down
-          - left
-          - right
+            - up
+            - down
+            - left
+            - right
         percent: number
         speed: number?
         timeout: number?
-
     info:
       parameters:
         selector: AndroidSelector
       returns:
         info: AndroidElementInfo
-
     screenshot:
       returns:
         binary: binary
-
     inputType:
       parameters:
         text: string
-
     inputPress:
       parameters:
         key: string
-
     inputTap:
       parameters:
         point: Point
-
     inputSwipe:
       parameters:
         segments:
           type: array
           items: Point
         steps: number
-
     inputDrag:
       parameters:
         from: Point
         to: Point
         steps: number
-
     launchBrowser:
       parameters:
         $mixin: ContextOptions
@@ -3729,67 +3202,52 @@ AndroidDevice:
             bypass: string?
             username: string?
             password: string?
-
       returns:
         context: BrowserContext
-
     open:
       parameters:
         command: string
       returns:
         socket: AndroidSocket
-
     shell:
       parameters:
         command: string
       returns:
         result: binary
-
     installApk:
       parameters:
         file: binary
         args:
           type: array?
           items: string
-
     push:
       parameters:
         file: binary
         path: string
         mode: number?
-
     setDefaultTimeoutNoReply:
       parameters:
         timeout: number
-
     connectToWebView:
       parameters:
         socketName: string
       returns:
         context: BrowserContext
-
-    close:
-
+    close: null
   events:
-    close:
-
+    close: null
     webViewAdded:
       parameters:
         webView: AndroidWebView
-
     webViewRemoved:
       parameters:
         socketName: string
-
-
 AndroidWebView:
   type: object
   properties:
     pid: number
     pkg: string
     socketName: string
-
-
 AndroidSelector:
   type: object
   properties:
@@ -3817,8 +3275,6 @@ AndroidSelector:
     scrollable: boolean?
     selected: boolean?
     text: string?
-
-
 AndroidElementInfo:
   type: object
   properties:
@@ -3840,24 +3296,17 @@ AndroidElementInfo:
     longClickable: boolean
     scrollable: boolean
     selected: boolean
-
-
 JsonPipe:
   type: interface
-
   commands:
     send:
       parameters:
         message: json
-
-    close:
-
+    close: null
   events:
-
     message:
       parameters:
         message: json
-
     closed:
       parameters:
         reason: string?

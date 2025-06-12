@@ -1555,6 +1555,7 @@ scheme.FrameEvaluateExpressionParams = tObject({
   expression: tString,
   isFunction: tOptional(tBoolean),
   arg: tType('SerializedArgument'),
+  isolatedContext: tOptional(tBoolean),
 });
 scheme.FrameEvaluateExpressionResult = tObject({
   value: tType('SerializedValue'),
@@ -1563,6 +1564,7 @@ scheme.FrameEvaluateExpressionHandleParams = tObject({
   expression: tString,
   isFunction: tOptional(tBoolean),
   arg: tType('SerializedArgument'),
+  isolatedContext: tOptional(tBoolean),
 });
 scheme.FrameEvaluateExpressionHandleResult = tObject({
   handle: tChannel(['ElementHandle', 'JSHandle']),
@@ -1840,6 +1842,7 @@ scheme.WorkerEvaluateExpressionParams = tObject({
   expression: tString,
   isFunction: tOptional(tBoolean),
   arg: tType('SerializedArgument'),
+  isolatedContext: tOptional(tBoolean),
 });
 scheme.WorkerEvaluateExpressionResult = tObject({
   value: tType('SerializedValue'),
@@ -1848,6 +1851,7 @@ scheme.WorkerEvaluateExpressionHandleParams = tObject({
   expression: tString,
   isFunction: tOptional(tBoolean),
   arg: tType('SerializedArgument'),
+  isolatedContext: tOptional(tBoolean),
 });
 scheme.WorkerEvaluateExpressionHandleResult = tObject({
   handle: tChannel(['ElementHandle', 'JSHandle']),
@@ -1867,6 +1871,7 @@ scheme.JSHandleEvaluateExpressionParams = tObject({
   expression: tString,
   isFunction: tOptional(tBoolean),
   arg: tType('SerializedArgument'),
+  isolatedContext: tOptional(tBoolean),
 });
 scheme.ElementHandleEvaluateExpressionParams = tType('JSHandleEvaluateExpressionParams');
 scheme.JSHandleEvaluateExpressionResult = tObject({
@@ -1877,6 +1882,7 @@ scheme.JSHandleEvaluateExpressionHandleParams = tObject({
   expression: tString,
   isFunction: tOptional(tBoolean),
   arg: tType('SerializedArgument'),
+  isolatedContext: tOptional(tBoolean),
 });
 scheme.ElementHandleEvaluateExpressionHandleParams = tType('JSHandleEvaluateExpressionHandleParams');
 scheme.JSHandleEvaluateExpressionHandleResult = tObject({

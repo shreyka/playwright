@@ -150,7 +150,7 @@ export abstract class BrowserContext extends SdkObject {
     if (debugMode() === 'console')
       await this.extendInjectedScript(consoleApiSource.source);
     if (this._options.serviceWorkers === 'block')
-      await this.addInitScript(`\nif (navigator.serviceWorker) navigator.serviceWorker.register = async () => { console.warn('Service Worker registration blocked by Playwright'); };\n`);
+      await this.addInitScript(`navigator.serviceWorker.register = async () => { };`);
 
     if (this._options.permissions)
       await this.grantPermissions(this._options.permissions);
@@ -333,16 +333,15 @@ export abstract class BrowserContext extends SdkObject {
     }
     const binding = new PageBinding(name, playwrightBinding, needsHandle);
     this._pageBindings.set(name, binding);
-    await this.doAddInitScript(binding.initScript);
-    const frames = this.pages().map(page => page.frames()).flat();
-    await Promise.all(frames.map(frame => frame.evaluateExpression(binding.initScript.source).catch(e => {})));
+    await this.doExposeBinding(binding);
   }
 
   async _removeExposedBindings() {
-    for (const [key, binding] of this._pageBindings) {
-      if (!binding.internal)
+    for (const key of this._pageBindings.keys()) {
+      if (!key.startsWith('__pw'))
         this._pageBindings.delete(key);
     }
+    await this.doRemoveExposedBindings();
   }
 
   async grantPermissions(permissions: string[], origin?: string) {
@@ -431,8 +430,8 @@ export abstract class BrowserContext extends SdkObject {
   }
 
   async _removeInitScripts(): Promise<void> {
-    this.initScripts = this.initScripts.filter(script => script.internal);
-    await this.doRemoveNonInternalInitScripts();
+    this.initScripts.splice(0, this.initScripts.length);
+    await this.doRemoveInitScripts();
   }
 
   async setRequestInterceptor(handler: network.RouteHandler | undefined): Promise<void> {

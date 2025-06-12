@@ -84,11 +84,15 @@ export class FrameDispatcher extends Dispatcher<Frame, channels.FrameChannel, Br
   }
 
   async evaluateExpression(params: channels.FrameEvaluateExpressionParams, metadata: CallMetadata): Promise<channels.FrameEvaluateExpressionResult> {
-    return { value: serializeResult(await this._frame.evaluateExpression(params.expression, { isFunction: params.isFunction }, parseArgument(params.arg))) };
+    return { value: serializeResult(await this._frame.evaluateExpression(params.expression, { isFunction: params.isFunction,
+      world: params.isolatedContext ? 'utility': 'main'
+    }, parseArgument(params.arg))) };
   }
 
   async evaluateExpressionHandle(params: channels.FrameEvaluateExpressionHandleParams, metadata: CallMetadata): Promise<channels.FrameEvaluateExpressionHandleResult> {
-    return { handle: ElementHandleDispatcher.fromJSHandle(this, await this._frame.evaluateExpressionHandle(params.expression, { isFunction: params.isFunction }, parseArgument(params.arg))) };
+    return { handle: ElementHandleDispatcher.fromJSHandle(this, await this._frame.evaluateExpressionHandle(params.expression, { isFunction: params.isFunction,
+      world: params.isolatedContext ? 'utility': 'main'
+    }, parseArgument(params.arg))) };
   }
 
   async waitForSelector(params: channels.FrameWaitForSelectorParams, metadata: CallMetadata): Promise<channels.FrameWaitForSelectorResult> {
