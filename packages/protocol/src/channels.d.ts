@@ -516,7 +516,7 @@ export type LocalUtilsHarLookupResult = {
   message?: string,
   redirectURL?: string,
   status?: number,
-  headers?: NameValue[],
+  headers: NameValue[],
   body?: Binary,
 };
 export type LocalUtilsHarCloseParams = {
@@ -1591,6 +1591,7 @@ export interface BrowserContextChannel extends BrowserContextEventTarget, EventT
   setOffline(params: BrowserContextSetOfflineParams, metadata?: CallMetadata): Promise<BrowserContextSetOfflineResult>;
   storageState(params: BrowserContextStorageStateParams, metadata?: CallMetadata): Promise<BrowserContextStorageStateResult>;
   pause(params?: BrowserContextPauseParams, metadata?: CallMetadata): Promise<BrowserContextPauseResult>;
+  resume(params?: BrowserContextResumeParams, metadata?: CallMetadata): Promise<BrowserContextResumeResult>;
   enableRecorder(params: BrowserContextEnableRecorderParams, metadata?: CallMetadata): Promise<BrowserContextEnableRecorderResult>;
   newCDPSession(params: BrowserContextNewCDPSessionParams, metadata?: CallMetadata): Promise<BrowserContextNewCDPSessionResult>;
   harStart(params: BrowserContextHarStartParams, metadata?: CallMetadata): Promise<BrowserContextHarStartResult>;
@@ -1663,7 +1664,7 @@ export type BrowserContextRequestFinishedEvent = {
 };
 export type BrowserContextResponseEvent = {
   response: ResponseChannel,
-  page?: PageChannel,
+  page: PageChannel,
 };
 export type BrowserContextAddCookiesParams = {
   cookies: SetNetworkCookie[],
@@ -1835,6 +1836,9 @@ export type BrowserContextStorageStateResult = {
 export type BrowserContextPauseParams = {};
 export type BrowserContextPauseOptions = {};
 export type BrowserContextPauseResult = void;
+export type BrowserContextResumeParams = {};
+export type BrowserContextResumeOptions = {};
+export type BrowserContextResumeResult = void;
 export type BrowserContextEnableRecorderParams = {
   language?: string,
   mode?: 'inspecting' | 'recording',
@@ -4485,6 +4489,7 @@ export type ElectronApplicationConsoleEvent = {
     lineNumber: number,
     columnNumber: number,
   },
+  page: PageChannel,
 };
 export type ElectronApplicationBrowserWindowParams = {
   page: PageChannel,

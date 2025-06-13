@@ -811,6 +811,10 @@ export class Page extends ChannelOwner<channels.PageChannel> implements api.Page
     this._browserContext.setDefaultTimeout(defaultTimeout);
   }
 
+  async resume(): Promise<void> {
+    await this._browserContext._channel.resume();
+  }
+
   async pdf(options: PDFOptions = {}): Promise<Buffer> {
     const transportOptions: channels.PagePdfParams = { ...options } as channels.PagePdfParams;
     if (transportOptions.margin)

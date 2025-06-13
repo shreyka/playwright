@@ -87,12 +87,14 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
     // Auto-enable recording when pause() is called, similar to codegen
     if (shouldPauseOnCall(sdkObject, metadata)) {
       try {
-        await Recorder.show(this._context, RecorderApp.factory(this._context), {
+        const recorder = await Recorder.show(this._context, RecorderApp.factory(this._context), {
           mode: 'recording',
           language: 'javascript',
           testIdAttributeName: undefined,
           handleSIGINT: false,
         });
+        // Explicitly set mode to 'recording' in case we're reusing an existing recorder
+        recorder.setMode('recording');
       } catch (error) {
         // Ignore recording activation errors and continue with pause
       }

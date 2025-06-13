@@ -309,7 +309,7 @@ scheme.LocalUtilsHarLookupResult = tObject({
   message: tOptional(tString),
   redirectURL: tOptional(tString),
   status: tOptional(tNumber),
-  headers: tOptional(tArray(tType('NameValue'))),
+  headers: tArray(tType('NameValue')),
   body: tOptional(tBinary),
 });
 scheme.LocalUtilsHarCloseParams = tObject({
@@ -912,7 +912,7 @@ scheme.BrowserContextRequestFinishedEvent = tObject({
 });
 scheme.BrowserContextResponseEvent = tObject({
   response: tChannel(['Response']),
-  page: tOptional(tChannel(['Page'])),
+  page: tChannel(['Page']),
 });
 scheme.BrowserContextAddCookiesParams = tObject({
   cookies: tArray(tType('SetNetworkCookie')),
@@ -1017,6 +1017,8 @@ scheme.BrowserContextStorageStateResult = tObject({
 });
 scheme.BrowserContextPauseParams = tOptional(tObject({}));
 scheme.BrowserContextPauseResult = tOptional(tObject({}));
+scheme.BrowserContextResumeParams = tOptional(tObject({}));
+scheme.BrowserContextResumeResult = tOptional(tObject({}));
 scheme.BrowserContextEnableRecorderParams = tObject({
   language: tOptional(tString),
   mode: tOptional(tEnum(['inspecting', 'recording'])),
@@ -2490,6 +2492,7 @@ scheme.ElectronApplicationConsoleEvent = tObject({
     lineNumber: tNumber,
     columnNumber: tNumber,
   }),
+  page: tChannel(['Page']),
 });
 scheme.ElectronApplicationBrowserWindowParams = tObject({
   page: tChannel(['Page']),

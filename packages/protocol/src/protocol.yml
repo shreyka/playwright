@@ -603,7 +603,7 @@ LocalUtils:
         redirectURL: string?
         status: number?
         headers:
-          type: array?
+          type: array
           items: NameValue
         body: binary?
     harClose:
@@ -1103,6 +1103,8 @@ BrowserContext:
           items: OriginStorage
     pause:
       experimental: true
+    resume:
+      experimental: true
     enableRecorder:
       experimental: true
       parameters:
@@ -1243,7 +1245,7 @@ BrowserContext:
     response:
       parameters:
         response: Response
-        page: Page?
+        page: Page
 Page:
   type: interface
   extends: EventTarget
@@ -3048,6 +3050,7 @@ ElectronApplication:
     console:
       parameters:
         $mixin: ConsoleMessage
+        page: Page
 Android:
   type: interface
   commands:

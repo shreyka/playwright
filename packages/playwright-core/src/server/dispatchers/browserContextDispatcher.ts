@@ -33,7 +33,7 @@ import { WebSocketRouteDispatcher } from './webSocketRouteDispatcher';
 import { WritableStreamDispatcher } from './writableStreamDispatcher';
 import { createGuid } from '../utils/crypto';
 import { urlMatches } from '../../utils/isomorphic/urlMatch';
-import { RecorderApp } from '../recorder/recorderApp';
+import { RecorderApp, EmptyRecorderApp } from '../recorder/recorderApp';
 
 import type { Artifact } from '../artifact';
 import type { ConsoleMessage } from '../console';
@@ -308,6 +308,22 @@ export class BrowserContextDispatcher extends Dispatcher<BrowserContext, channel
 
   async pause(params: channels.BrowserContextPauseParams, metadata: CallMetadata) {
     // Debugger will take care of this.
+  }
+
+  async resume(params: channels.BrowserContextResumeParams, metadata: CallMetadata) {
+    // Resume only the current context's debugger, not all recorders
+    this._context.debugger().resume(false);
+    
+    // Set recorder mode to 'none' to completely stop recording
+    // This ensures that the next pause() call will start fresh with recording mode
+    try {
+      const recorder = await Recorder.showInspector(this._context, { omitCallTracking: true }, () => Promise.resolve(new EmptyRecorderApp()));
+      if (recorder) {
+        recorder.setMode('none');
+      }
+    } catch (error) {
+      // Ignore errors if recorder is not available
+    }
   }
 
   async newCDPSession(params: channels.BrowserContextNewCDPSessionParams): Promise<channels.BrowserContextNewCDPSessionResult> {
