@@ -16,7 +16,7 @@ async def test_cdp_pause_resume():
         
         # === STEP 2: Connect via CDP to localhost:9222 ===
         print('\n🔌 === STEP 2: Connect via CDP to localhost:9222 ===')
-        cdp_endpoint = 'ws://127.0.0.1:9222/devtools/browser/a834b361-ce07-43db-81bd-39f716037d53'
+        cdp_endpoint = 'ws://127.0.0.1:9222/devtools/browser/66420d35-2799-4648-b211-51a43e6bc4df'
         
         try:
             cdp_browser = await p.chromium.connect_over_cdp(cdp_endpoint)
@@ -31,7 +31,6 @@ async def test_cdp_pause_resume():
             # === STEP 3: Test first pause/resume via CDP connection ===
             print('\n🎬 === STEP 3: First pause/resume cycle ===')
             print('🧹 Clearing recorder state before first pause...')
-            await clear_recorder_state(cdp_page)
             print('📹 Calling first page.pause() via CDP connection...')
             
             # Start first pause in background
@@ -60,8 +59,7 @@ async def test_cdp_pause_resume():
             
             # === STEP 4: Test second pause/resume via CDP connection ===
             print('\n🎬 === STEP 4: Second pause/resume cycle ===')
-            print('🧹 Clearing recorder state before second pause...')
-            await clear_recorder_state(cdp_page)
+            
             print('📹 Calling second page.pause() via CDP connection...')
             
             # Start second pause in background

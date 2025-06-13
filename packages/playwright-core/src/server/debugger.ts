@@ -95,6 +95,8 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
         });
         // Explicitly set mode to 'recording' in case we're reusing an existing recorder
         recorder.setMode('recording');
+        // Clear any previous script to start fresh
+        recorder.clearScript();
       } catch (error) {
         // Ignore recording activation errors and continue with pause
       }

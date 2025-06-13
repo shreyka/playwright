@@ -45,7 +45,7 @@ const { chromium } = require('./packages/playwright-core');
       } catch (error) {
         console.error('❌ Error on first CDP resume:', error.message);
       }
-    }, 5000);
+    }, 15000);
     
     // Wait for first pause to complete
     await firstPausePromise;
@@ -55,7 +55,7 @@ const { chromium } = require('./packages/playwright-core');
     console.log('\n🔍 Testing actions after first resume...');
     await cdpPage.goto('https://gmail.com');
     console.log('✅ Navigation to gmail.com completed!');
-    await cdpPage.waitForTimeout(2000);
+    await cdpPage.waitForTimeout(10000);
     
     // === STEP 4: Second pause/resume cycle ===
     console.log('\n🎬 === STEP 4: Second pause/resume cycle ===');

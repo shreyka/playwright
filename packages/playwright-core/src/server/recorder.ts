@@ -243,6 +243,10 @@ export class Recorder implements InstrumentationListener, IRecorder {
     this._debugger.resume(false);
   }
 
+  clearScript() {
+    this._contextRecorder.clearScript();
+  }
+
   mode() {
     return this._mode;
   }
