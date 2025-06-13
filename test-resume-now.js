@@ -29,6 +29,7 @@ const { chromium } = require('./packages/playwright-core');
     const cdpPage = cdpContext.pages()[0];
     
     console.log('📄 CDP Page URL:', await cdpPage.url());
+    await cdpPage.goto("https://www.producthunt.com/")
     
     // === STEP 3: First pause/resume cycle ===
     console.log('\n🎬 === STEP 3: First pause/resume cycle ===');
@@ -41,6 +42,7 @@ const { chromium } = require('./packages/playwright-core');
       console.log('⏭️  Calling first page.resume() via CDP connection...');
       try {
         await cdpPage.resume();
+        
         console.log('✅ First CDP page.resume() called successfully!');
       } catch (error) {
         console.error('❌ Error on first CDP resume:', error.message);
@@ -50,11 +52,10 @@ const { chromium } = require('./packages/playwright-core');
     // Wait for first pause to complete
     await firstPausePromise;
     console.log('🎉 First CDP pause/resume cycle completed!');
-    
-    // Test actions after first resume
-    console.log('\n🔍 Testing actions after first resume...');
-    await cdpPage.goto('https://gmail.com');
-    console.log('✅ Navigation to gmail.com completed!');
+
+    console.log("Resumed and testing clicks now")
+    await cdpPage.waitForSelector("[data-test=\"header-search-input\"]")
+    await cdpPage.locator("[data-test=\"header-search-input\"]").click()
     await cdpPage.waitForTimeout(10000);
     
     // === STEP 4: Second pause/resume cycle ===

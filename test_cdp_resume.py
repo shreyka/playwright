@@ -16,7 +16,7 @@ async def test_cdp_pause_resume():
         
         # === STEP 2: Connect via CDP to localhost:9222 ===
         print('\n🔌 === STEP 2: Connect via CDP to localhost:9222 ===')
-        cdp_endpoint = 'ws://127.0.0.1:9222/devtools/browser/66420d35-2799-4648-b211-51a43e6bc4df'
+        cdp_endpoint = 'ws://127.0.0.1:9222/devtools/browser/17c80be2-8f99-4346-ac79-cc896d5b1837'
         
         try:
             cdp_browser = await p.chromium.connect_over_cdp(cdp_endpoint)
@@ -26,12 +26,15 @@ async def test_cdp_pause_resume():
             cdp_context = cdp_browser.contexts[0]
             print('got context')
             cdp_page = cdp_context.pages[0]
-            
+            print("going to producthunt")
+            await cdp_page.goto("https://www.producthunt.com/")
+
             
             # === STEP 3: Test first pause/resume via CDP connection ===
             print('\n🎬 === STEP 3: First pause/resume cycle ===')
             print('🧹 Clearing recorder state before first pause...')
             print('📹 Calling first page.pause() via CDP connection...')
+
             
             # Start first pause in background
             pause_task = asyncio.create_task(cdp_page.pause())
@@ -42,7 +45,8 @@ async def test_cdp_pause_resume():
             
             try:
                 await cdp_page.resume()
-                print('✅ First CDP page.resume() called successfully!')
+                
+                
             except Exception as error:
                 print(f'❌ Error on first CDP resume: {error}')
             
@@ -53,9 +57,12 @@ async def test_cdp_pause_resume():
             
             # Test actions after first resume
             print('\n🔍 Testing actions after first resume...')
-            await cdp_page.goto('https://example.com')
-            print('✅ Navigation to example.com completed!')
-            await cdp_page.wait_for_timeout(2000)
+            await cdp_page.goto('https://www.producthunt.com/')
+            await cdp_page.wait_for_selector("[data-test=\"header-search-input\"]")
+            await cdp_page.locator("[data-test=\"header-search-input\"]").click()
+            print("Click testing done")
+            await asyncio.sleep(5000)
+            
             
             # === STEP 4: Test second pause/resume via CDP connection ===
             print('\n🎬 === STEP 4: Second pause/resume cycle ===')

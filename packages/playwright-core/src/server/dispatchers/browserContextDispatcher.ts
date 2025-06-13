@@ -314,12 +314,16 @@ export class BrowserContextDispatcher extends Dispatcher<BrowserContext, channel
     // Resume only the current context's debugger, not all recorders
     this._context.debugger().resume(false);
     
-    // Set recorder mode to 'none' to completely stop recording
+    // Set recorder mode to 'none' to completely stop recording and hide all UI overlays
     // This ensures that the next pause() call will start fresh with recording mode
     try {
       const recorder = await Recorder.showInspector(this._context, { omitCallTracking: true }, () => Promise.resolve(new EmptyRecorderApp()));
       if (recorder) {
         recorder.setMode('none');
+        // Explicitly hide any highlighted selectors to clear tooltips and overlays
+        recorder.hideHighlightedSelector();
+        // Clear any current call metadata to remove persistent actionSelectors/tooltips
+        recorder.clearCurrentCalls();
       }
     } catch (error) {
       // Ignore errors if recorder is not available

@@ -89,7 +89,7 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
       try {
         const recorder = await Recorder.show(this._context, RecorderApp.factory(this._context), {
           mode: 'recording',
-          language: 'javascript',
+          language: 'python',
           testIdAttributeName: undefined,
           handleSIGINT: false,
         });

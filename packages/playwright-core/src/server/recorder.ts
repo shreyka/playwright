@@ -160,6 +160,20 @@ export class Recorder implements InstrumentationListener, IRecorder {
     });
 
     await this._context.exposeBinding('__pw_recorderState', false, async source => {
+      // When in 'none' mode, return minimal UI state with no active selectors or highlights
+      if (this._mode === 'none') {
+        const uiState: UIState = {
+          mode: this._mode,
+          actionPoint: undefined,
+          actionSelector: undefined,
+          ariaTemplate: undefined,
+          language: this._currentLanguage,
+          testIdAttributeName: this._contextRecorder.testIdAttributeName(),
+          overlay: this._overlayState,
+        };
+        return uiState;
+      }
+
       let actionSelector: string | undefined;
       let actionPoint: Point | undefined;
       const hasActiveScreenshotCommand = [...this._currentCallsMetadata.keys()].some(isScreenshotCommand);
@@ -247,6 +261,12 @@ export class Recorder implements InstrumentationListener, IRecorder {
     this._contextRecorder.clearScript();
   }
 
+  clearCurrentCalls() {
+    this._currentCallsMetadata.clear();
+    this._updateUserSources();
+    this.updateCallLog([]);
+  }
+
   mode() {
     return this._mode;
   }
@@ -303,7 +323,7 @@ export class Recorder implements InstrumentationListener, IRecorder {
   }
 
   async onBeforeCall(sdkObject: SdkObject, metadata: CallMetadata) {
-    if (this._omitCallTracking || this._isRecording())
+    if (this._omitCallTracking || this._isRecording() || this._mode === 'none')
       return;
     this._currentCallsMetadata.set(metadata, sdkObject);
     this._updateUserSources();
@@ -315,7 +335,7 @@ export class Recorder implements InstrumentationListener, IRecorder {
   }
 
   async onAfterCall(sdkObject: SdkObject, metadata: CallMetadata) {
-    if (this._omitCallTracking || this._isRecording())
+    if (this._omitCallTracking || this._isRecording() || this._mode === 'none')
       return;
     if (!metadata.error)
       this._currentCallsMetadata.delete(metadata);
