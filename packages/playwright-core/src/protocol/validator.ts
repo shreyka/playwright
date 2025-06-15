@@ -212,11 +212,11 @@ scheme.APIRequestContextFetchParams = tObject({
   encodedParams: tOptional(tString),
   params: tOptional(tArray(tType('NameValue'))),
   method: tOptional(tString),
-  headers: tOptional(tArray(tType('NameValue'))),
+  headers: tArray(tType('NameValue')),
   postData: tOptional(tBinary),
   jsonData: tOptional(tString),
-  formData: tOptional(tArray(tType('NameValue'))),
-  multipartData: tOptional(tArray(tType('FormField'))),
+  formData: tArray(tType('NameValue')),
+  multipartData: tArray(tType('FormField')),
   timeout: tOptional(tNumber),
   failOnStatusCode: tOptional(tBoolean),
   ignoreHTTPSErrors: tOptional(tBoolean),
@@ -1015,7 +1015,9 @@ scheme.BrowserContextStorageStateResult = tObject({
   cookies: tArray(tType('NetworkCookie')),
   origins: tArray(tType('OriginStorage')),
 });
-scheme.BrowserContextPauseParams = tOptional(tObject({}));
+scheme.BrowserContextPauseParams = tObject({
+  outputFile: tOptional(tString),
+});
 scheme.BrowserContextPauseResult = tOptional(tObject({}));
 scheme.BrowserContextResumeParams = tOptional(tObject({}));
 scheme.BrowserContextResumeResult = tOptional(tObject({}));
@@ -2190,14 +2192,14 @@ scheme.RouteAbortResult = tOptional(tObject({}));
 scheme.RouteContinueParams = tObject({
   url: tOptional(tString),
   method: tOptional(tString),
-  headers: tOptional(tArray(tType('NameValue'))),
+  headers: tArray(tType('NameValue')),
   postData: tOptional(tBinary),
   isFallback: tBoolean,
 });
 scheme.RouteContinueResult = tOptional(tObject({}));
 scheme.RouteFulfillParams = tObject({
   status: tOptional(tNumber),
-  headers: tOptional(tArray(tType('NameValue'))),
+  headers: tArray(tType('NameValue')),
   body: tOptional(tString),
   isBase64: tOptional(tBoolean),
   fetchResponseUid: tOptional(tString),

@@ -31,6 +31,7 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
   private _pausedCallsMetadata = new Map<CallMetadata, { resolve: () => void, sdkObject: SdkObject }>();
   private _enabled: boolean;
   private _context: BrowserContext;
+  private _outputFile: string | undefined;
 
   static Events = {
     PausedStateChanged: 'pausedstatechanged'
@@ -50,6 +51,10 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
       this._context.instrumentation.removeListener(this);
     });
     this._slowMo = this._context._browser.options.slowMo;
+  }
+
+  _setOutputFile(outputFile: string) {
+    this._outputFile = outputFile;
   }
 
   async setMuted(muted: boolean) {
@@ -97,6 +102,11 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
         recorder.setMode('recording');
         // Clear any previous script to start fresh
         recorder.clearScript();
+        
+        // Set output file if provided
+        if (this._outputFile) {
+          recorder.setOutput('python', this._outputFile);
+        }
       } catch (error) {
         // Ignore recording activation errors and continue with pause
       }

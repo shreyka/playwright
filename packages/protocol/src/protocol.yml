@@ -302,15 +302,15 @@ APIRequestContext:
           items: NameValue
         method: string?
         headers:
-          type: array?
+          type: array
           items: NameValue
         postData: binary?
         jsonData: string?
         formData:
-          type: array?
+          type: array
           items: NameValue
         multipartData:
-          type: array?
+          type: array
           items: FormField
         timeout: number?
         failOnStatusCode: boolean?
@@ -1103,6 +1103,8 @@ BrowserContext:
           items: OriginStorage
     pause:
       experimental: true
+      parameters:
+        outputFile: string?
     resume:
       experimental: true
     enableRecorder:
@@ -2695,7 +2697,7 @@ Route:
         url: string?
         method: string?
         headers:
-          type: array?
+          type: array
           items: NameValue
         postData: binary?
         isFallback: boolean
@@ -2703,7 +2705,7 @@ Route:
       parameters:
         status: number?
         headers:
-          type: array?
+          type: array
           items: NameValue
         body: string?
         isBase64: boolean?

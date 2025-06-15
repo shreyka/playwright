@@ -1,0 +1,23 @@
+
+> playwright-internal@1.52.0 build
+> node utils/build/build.js
+
+==== Running npm ci --save=false --fund=false --audit=false in /Users/shreyak/Documents/Simplex/playwright/tests/playwright-test/stable-test-runner
+
+added 4 packages in 573ms
+==== Running npm ci --save=false --fund=false --audit=false --omit=optional in /Users/shreyak/Documents/Simplex/playwright/packages/playwright/bundles/babel
+
+added 75 packages in 660ms
+==== Running npm ci --save=false --fund=false --audit=false --omit=optional in /Users/shreyak/Documents/Simplex/playwright/packages/playwright/bundles/expect
+
+added 51 packages in 340ms
+==== Running npm ci --save=false --fund=false --audit=false --omit=optional in /Users/shreyak/Documents/Simplex/playwright/packages/playwright/bundles/utils
+
+added 26 packages in 284ms
+==== Running npm ci --save=false --fund=false --audit=false --omit=optional in /Users/shreyak/Documents/Simplex/playwright/packages/playwright-core/bundles/utils
+
+added 45 packages in 381ms
+==== Running npm ci --save=false --fund=false --audit=false --omit=optional in /Users/shreyak/Documents/Simplex/playwright/packages/playwright-core/bundles/zip
+
+added 16 packages in 250ms
+==== Running node /Users/shreyak/Documents/Simplex/playwright/utils/generate_third_party_notice.js in /Users/shreyak/Documents/Simplex/playwright

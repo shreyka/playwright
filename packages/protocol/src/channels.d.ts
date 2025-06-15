@@ -359,11 +359,11 @@ export type APIRequestContextFetchParams = {
   encodedParams?: string,
   params?: NameValue[],
   method?: string,
-  headers?: NameValue[],
+  headers: NameValue[],
   postData?: Binary,
   jsonData?: string,
-  formData?: NameValue[],
-  multipartData?: FormField[],
+  formData: NameValue[],
+  multipartData: FormField[],
   timeout?: number,
   failOnStatusCode?: boolean,
   ignoreHTTPSErrors?: boolean,
@@ -374,11 +374,8 @@ export type APIRequestContextFetchOptions = {
   encodedParams?: string,
   params?: NameValue[],
   method?: string,
-  headers?: NameValue[],
   postData?: Binary,
   jsonData?: string,
-  formData?: NameValue[],
-  multipartData?: FormField[],
   timeout?: number,
   failOnStatusCode?: boolean,
   ignoreHTTPSErrors?: boolean,
@@ -1590,7 +1587,7 @@ export interface BrowserContextChannel extends BrowserContextEventTarget, EventT
   setWebSocketInterceptionPatterns(params: BrowserContextSetWebSocketInterceptionPatternsParams, metadata?: CallMetadata): Promise<BrowserContextSetWebSocketInterceptionPatternsResult>;
   setOffline(params: BrowserContextSetOfflineParams, metadata?: CallMetadata): Promise<BrowserContextSetOfflineResult>;
   storageState(params: BrowserContextStorageStateParams, metadata?: CallMetadata): Promise<BrowserContextStorageStateResult>;
-  pause(params?: BrowserContextPauseParams, metadata?: CallMetadata): Promise<BrowserContextPauseResult>;
+  pause(params: BrowserContextPauseParams, metadata?: CallMetadata): Promise<BrowserContextPauseResult>;
   resume(params?: BrowserContextResumeParams, metadata?: CallMetadata): Promise<BrowserContextResumeResult>;
   enableRecorder(params: BrowserContextEnableRecorderParams, metadata?: CallMetadata): Promise<BrowserContextEnableRecorderResult>;
   newCDPSession(params: BrowserContextNewCDPSessionParams, metadata?: CallMetadata): Promise<BrowserContextNewCDPSessionResult>;
@@ -1833,8 +1830,12 @@ export type BrowserContextStorageStateResult = {
   cookies: NetworkCookie[],
   origins: OriginStorage[],
 };
-export type BrowserContextPauseParams = {};
-export type BrowserContextPauseOptions = {};
+export type BrowserContextPauseParams = {
+  outputFile?: string,
+};
+export type BrowserContextPauseOptions = {
+  outputFile?: string,
+};
 export type BrowserContextPauseResult = void;
 export type BrowserContextResumeParams = {};
 export type BrowserContextResumeOptions = {};
@@ -3880,27 +3881,25 @@ export type RouteAbortResult = void;
 export type RouteContinueParams = {
   url?: string,
   method?: string,
-  headers?: NameValue[],
+  headers: NameValue[],
   postData?: Binary,
   isFallback: boolean,
 };
 export type RouteContinueOptions = {
   url?: string,
   method?: string,
-  headers?: NameValue[],
   postData?: Binary,
 };
 export type RouteContinueResult = void;
 export type RouteFulfillParams = {
   status?: number,
-  headers?: NameValue[],
+  headers: NameValue[],
   body?: string,
   isBase64?: boolean,
   fetchResponseUid?: string,
 };
 export type RouteFulfillOptions = {
   status?: number,
-  headers?: NameValue[],
   body?: string,
   isBase64?: boolean,
   fetchResponseUid?: string,
