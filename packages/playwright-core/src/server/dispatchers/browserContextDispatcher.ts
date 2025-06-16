@@ -307,6 +307,7 @@ export class BrowserContextDispatcher extends Dispatcher<BrowserContext, channel
   }
 
   async pause(params: channels.BrowserContextPauseParams, metadata: CallMetadata) {
+    console.log('🐛 [DEBUG] BrowserContextDispatcher.pause called with params:', JSON.stringify(params, null, 2));
     if (params.outputFile)
       this._context.debugger()._setOutputFile(params.outputFile);
     // Debugger will take care of this.

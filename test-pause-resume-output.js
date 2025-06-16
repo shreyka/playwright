@@ -13,7 +13,7 @@ const { chromium } = require('playwright');
   const page = await context.newPage();
 
   console.log('🌐 Navigating to test page...');
-  await page.goto('https://example.com');
+  await page.goto('https://www.ycombinator.com');
   
   // Wait a moment for the page to load
   await page.waitForTimeout(2000);
@@ -26,7 +26,7 @@ const { chromium } = require('playwright');
   
   // CORRECT PATTERN: Start the pause and get the promise
   const pausePromise = page.pause({
-    outputFile: '/Users/shreyak/Documents/Simplex/playwright/capture_output.js'
+    outputFile: '/Users/shreyak/Documents/Simplex/playwright/output/final_testing.py'
   });
   
   // Set up resume to be called after 10 seconds

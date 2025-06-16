@@ -13,7 +13,7 @@ const { chromium } = require('./packages/playwright-core');
   const page = await context.newPage();
 
   console.log('🌐 Navigating to test page...');
-  await page.goto('https://example.com');
+  await page.goto('https://www.ycombinator.com');
   
   // Wait a moment for the page to load
   await page.waitForTimeout(2000);
@@ -22,7 +22,7 @@ const { chromium } = require('./packages/playwright-core');
   
   // Test the new outputFile functionality
   const pausePromise = page.pause({
-    outputFile: './test-output.py'
+    outputFile: '/Users/shreyak/Documents/Simplex/playwright/output/test-output.py'
   });
   
   // Set up resume to be called after 5 seconds
@@ -34,7 +34,7 @@ const { chromium } = require('./packages/playwright-core');
     } catch (error) {
       console.error('❌ Error on resume:', error.message);
     }
-  }, 5000);
+  }, 10000);
   
   // Wait for the pause to complete (when resume is called)
   await pausePromise;

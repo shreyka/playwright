@@ -64,6 +64,13 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
   async onBeforeCall(sdkObject: SdkObject, metadata: CallMetadata): Promise<void> {
     if (this._muted)
       return;
+    
+    // For pause calls, extract outputFile from params if not already set
+    if (shouldPauseOnCall(sdkObject, metadata) && metadata.params?.outputFile && !this._outputFile) {
+      this._outputFile = metadata.params.outputFile;
+      console.log('🐛 [DEBUG] Setting output file from metadata params:', metadata.params.outputFile);
+    }
+    
     if (shouldPauseOnCall(sdkObject, metadata) || (this._pauseOnNextStatement && shouldPauseBeforeStep(metadata)))
       await this.pause(sdkObject, metadata);
   }
