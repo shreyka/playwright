@@ -32,6 +32,7 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
   private _enabled: boolean;
   private _context: BrowserContext;
   private _outputFile: string | undefined;
+  private _clickXPathData: Array<{selector: string, xpath: string, timestamp: number}> = [];
 
   static Events = {
     PausedStateChanged: 'pausedstatechanged'
@@ -55,6 +56,7 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
 
   _setOutputFile(outputFile: string) {
     this._outputFile = outputFile;
+    console.log('🐛 [DEBUG] Setting output file to:', outputFile);
   }
 
   async setMuted(muted: boolean) {
@@ -64,6 +66,13 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
   async onBeforeCall(sdkObject: SdkObject, metadata: CallMetadata): Promise<void> {
     if (this._muted)
       return;
+    
+    // For pause calls, extract outputFile from params and set it immediately
+    if (shouldPauseOnCall(sdkObject, metadata) && metadata.params?.outputFile) {
+      this._outputFile = metadata.params.outputFile;
+      console.log('🐛 [DEBUG] Setting output file from metadata params:', metadata.params.outputFile);
+    }
+    
     if (shouldPauseOnCall(sdkObject, metadata) || (this._pauseOnNextStatement && shouldPauseBeforeStep(metadata)))
       await this.pause(sdkObject, metadata);
   }
@@ -89,6 +98,9 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
       return;
     this._enabled = true;
     
+    // Clear xpath data at start of each pause (like codegen script clears)
+    this._clickXPathData = [];
+    
     // Auto-enable recording when pause() is called, similar to codegen
     if (shouldPauseOnCall(sdkObject, metadata)) {
       try {
@@ -107,6 +119,10 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
         if (this._outputFile) {
           recorder.setOutput('python', this._outputFile);
         }
+
+        // Set up xpath capture for clicks
+        this._setupClickXPathCapture(recorder);
+        
       } catch (error) {
         // Ignore recording activation errors and continue with pause
       }
@@ -131,6 +147,13 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
       resolve();
     }
     this._pausedCallsMetadata.clear();
+    
+    // Flush any pending recorder output before writing xpath data
+    this._flushRecorderOutput();
+    
+    // Write xpath data to file when recording ends
+    this._writeXPathDataToFile();
+    
     this.emit(Debugger.Events.PausedStateChanged);
   }
 
@@ -149,6 +172,105 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
     for (const [metadata, { sdkObject }] of this._pausedCallsMetadata)
       result.push({ metadata, sdkObject });
     return result;
+  }
+
+  private _setupClickXPathCapture(recorder: any) {
+    // Hook into click actions only
+    const originalOnBeforeCall = recorder.onBeforeCall?.bind(recorder);
+    if (originalOnBeforeCall) {
+      recorder.onBeforeCall = async (sdkObject: any, metadata: any) => {
+        // Capture xpath for click actions only
+        if (metadata.method === 'click' && metadata.params?.selector) {
+          await this._captureClickXPath(metadata.params.selector, sdkObject.attribution?.page);
+        }
+        return originalOnBeforeCall(sdkObject, metadata);
+      };
+    }
+  }
+
+  private async _captureClickXPath(selector: string, page: any) {
+    console.log('🐛 [DEBUG] Capturing xpath for click on selector:', selector);
+    try {
+      const xpath = await page?.mainFrame()?.evaluateExpression(`
+        (() => {
+          const element = document.querySelector('${selector}');
+          if (!element) return null;
+          
+          function getXPath(el) {
+            if (el.id) return '//*[@id="' + el.id + '"]';
+            if (el === document.body) return '/html/body';
+            
+            let ix = 0;
+            const siblings = el.parentNode?.childNodes || [];
+            for (let i = 0; i < siblings.length; i++) {
+              const sibling = siblings[i];
+              if (sibling === el) {
+                return getXPath(el.parentNode) + '/' + el.tagName.toLowerCase() + '[' + (ix + 1) + ']';
+              }
+              if (sibling.nodeType === 1 && sibling.tagName === el.tagName) ix++;
+            }
+          }
+          
+          return getXPath(element);
+        })()
+      `);
+      
+      if (xpath) {
+        this._clickXPathData.push({
+          selector,
+          xpath,
+          timestamp: Date.now()
+        });
+        console.log('🐛 [DEBUG] Captured xpath:', xpath, 'for selector:', selector);
+      } else {
+        console.log('🐛 [DEBUG] No xpath captured for selector:', selector);
+      }
+    } catch (e) {
+      console.log('🐛 [DEBUG] Error capturing xpath:', e.message);
+    }
+  }
+
+  private _writeXPathDataToFile() {
+    console.log('🐛 [DEBUG] Writing xpath data to file. OutputFile:', this._outputFile, 'Data length:', this._clickXPathData.length);
+    if (!this._outputFile || this._clickXPathData.length === 0) {
+      console.log('🐛 [DEBUG] Skipping xpath file write - no output file or no data');
+      return;
+    }
+    
+    try {
+      const fs = require('fs');
+      
+      // Auto-derive xpath filename from existing outputFile
+      const xpathFile = this._outputFile.replace(/\.py$/, '_xpaths.json');
+      console.log('🐛 [DEBUG] Writing xpath file to:', xpathFile);
+      
+      const xpathOutput = {
+        clickXPaths: this._clickXPathData,
+        generatedAt: new Date().toISOString()
+      };
+      
+      fs.writeFileSync(xpathFile, JSON.stringify(xpathOutput, null, 2));
+      console.log('🐛 [DEBUG] Successfully wrote xpath file');
+    } catch (e) {
+      console.log('🐛 [DEBUG] Error writing xpath file:', e.message);
+    }
+  }
+
+  private _flushRecorderOutput() {
+    try {
+      // Get the current recorder for this context
+      const recorder = (this._context as any).recorderAppForTest;
+      if (recorder && recorder._contextRecorder) {
+        // Access the throttled output file and flush it
+        const contextRecorder = recorder._contextRecorder;
+        if (contextRecorder._throttledOutputFile) {
+          console.log('🐛 [DEBUG] Flushing recorder output before writing xpath file');
+          contextRecorder._throttledOutputFile.flush();
+        }
+      }
+    } catch (e) {
+      console.log('🐛 [DEBUG] Error flushing recorder output:', e.message);
+    }
   }
 }
 

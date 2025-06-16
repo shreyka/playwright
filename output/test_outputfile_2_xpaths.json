@@ -1,0 +1,35 @@
+{
+  "clickXPaths": [
+    {
+      "selector": "a",
+      "xpath": "//*[@id=\"logo\"]/a[1]",
+      "timestamp": 1750036693159
+    },
+    {
+      "selector": "a",
+      "xpath": "//*[@id=\"logo\"]/a[1]",
+      "timestamp": 1750036693160
+    },
+    {
+      "selector": "p",
+      "xpath": "//*[@id=\"intro\"]/p[1]",
+      "timestamp": 1750036694314
+    },
+    {
+      "selector": "p",
+      "xpath": "//*[@id=\"intro\"]/p[1]",
+      "timestamp": 1750036694315
+    },
+    {
+      "selector": "h1",
+      "xpath": "/html/body/div[1]/header[1]/h1[1]",
+      "timestamp": 1750036695465
+    },
+    {
+      "selector": "h1",
+      "xpath": "/html/body/div[1]/header[1]/h1[1]",
+      "timestamp": 1750036695467
+    }
+  ],
+  "generatedAt": "2025-06-16T01:18:16.600Z"
+}
