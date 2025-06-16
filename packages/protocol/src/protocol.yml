@@ -1103,6 +1103,8 @@ BrowserContext:
           items: OriginStorage
     pause:
       experimental: true
+      parameters:
+        outputFile: string?
     resume:
       experimental: true
     enableRecorder:
@@ -2708,6 +2710,8 @@ Route:
         body: string?
         isBase64: boolean?
         fetchResponseUid: string?
+      flags:
+        snapshot: true
 WebSocketRoute:
   type: interface
   initializer:

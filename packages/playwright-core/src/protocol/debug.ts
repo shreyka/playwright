@@ -170,7 +170,8 @@ export const commandsWithTracingSnapshots = new Set([
   'ElementHandle.type',
   'ElementHandle.uncheck',
   'ElementHandle.waitForElementState',
-  'ElementHandle.waitForSelector'
+  'ElementHandle.waitForSelector',
+  'Route.fulfill'
 ]);
 
 export const pausesBeforeInputActions = new Set([

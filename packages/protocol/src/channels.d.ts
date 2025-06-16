@@ -1590,7 +1590,7 @@ export interface BrowserContextChannel extends BrowserContextEventTarget, EventT
   setWebSocketInterceptionPatterns(params: BrowserContextSetWebSocketInterceptionPatternsParams, metadata?: CallMetadata): Promise<BrowserContextSetWebSocketInterceptionPatternsResult>;
   setOffline(params: BrowserContextSetOfflineParams, metadata?: CallMetadata): Promise<BrowserContextSetOfflineResult>;
   storageState(params: BrowserContextStorageStateParams, metadata?: CallMetadata): Promise<BrowserContextStorageStateResult>;
-  pause(params?: BrowserContextPauseParams, metadata?: CallMetadata): Promise<BrowserContextPauseResult>;
+  pause(params: BrowserContextPauseParams, metadata?: CallMetadata): Promise<BrowserContextPauseResult>;
   resume(params?: BrowserContextResumeParams, metadata?: CallMetadata): Promise<BrowserContextResumeResult>;
   enableRecorder(params: BrowserContextEnableRecorderParams, metadata?: CallMetadata): Promise<BrowserContextEnableRecorderResult>;
   newCDPSession(params: BrowserContextNewCDPSessionParams, metadata?: CallMetadata): Promise<BrowserContextNewCDPSessionResult>;
@@ -1833,8 +1833,12 @@ export type BrowserContextStorageStateResult = {
   cookies: NetworkCookie[],
   origins: OriginStorage[],
 };
-export type BrowserContextPauseParams = {};
-export type BrowserContextPauseOptions = {};
+export type BrowserContextPauseParams = {
+  outputFile?: string,
+};
+export type BrowserContextPauseOptions = {
+  outputFile?: string,
+};
 export type BrowserContextPauseResult = void;
 export type BrowserContextResumeParams = {};
 export type BrowserContextResumeOptions = {};
