@@ -27,7 +27,7 @@ async def test_cdp_pause_resume():
             print('got context')
             cdp_page = cdp_context.pages[0]
             print("going to producthunt")
-            await cdp_page.goto("https://www.producthunt.com/")
+            await cdp_page.goto("https://www.ycombinator.com/")
 
             
             # === STEP 3: Test first pause/resume via CDP connection ===
@@ -37,7 +37,7 @@ async def test_cdp_pause_resume():
 
             
             # Start first pause in background
-            pause_task = asyncio.create_task(cdp_page.pause())
+            pause_task = asyncio.create_task(cdp_page.pause(output="test_resume_output_cdp1.py"))
             
             # Wait a bit, then try to resume
             await asyncio.sleep(5)
@@ -61,7 +61,7 @@ async def test_cdp_pause_resume():
             await cdp_page.wait_for_selector("[data-test=\"header-search-input\"]")
             await cdp_page.locator("[data-test=\"header-search-input\"]").click()
             print("Click testing done")
-            await asyncio.sleep(5000)
+            await asyncio.sleep(5)
             
             
             # === STEP 4: Test second pause/resume via CDP connection ===

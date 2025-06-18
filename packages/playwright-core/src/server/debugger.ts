@@ -92,6 +92,7 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
           language: 'python',
           testIdAttributeName: undefined,
           handleSIGINT: false,
+          outputFile: metadata.params?.outputFile
         });
         // Explicitly set mode to 'recording' in case we're reusing an existing recorder
         recorder.setMode('recording');
