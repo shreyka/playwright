@@ -90,6 +90,7 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
   }
 
   resume(step: boolean) {
+    console.log('DEBUGGER resume finished');
     if (!this.isPaused())
       return;
 
@@ -101,7 +102,6 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
     }
     this._pausedCallsMetadata.clear();
     this.emit(Debugger.Events.PausedStateChanged);
-    console.log('DEBUGGER resume finished');
   }
 
   pauseOnNextStatement() {

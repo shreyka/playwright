@@ -326,8 +326,10 @@ export class BrowserContextDispatcher extends Dispatcher<BrowserContext, channel
     // This ensures that the next pause() call will start fresh with recording mode
     try {
       const recorder = await Recorder.showInspector(this._context, { omitCallTracking: true }, () => Promise.resolve(new EmptyRecorderApp()));
+      console.log("recorder", recorder)
       if (recorder) {
-        recorder.setMode('standby');
+        console.log("setting mode none")
+        recorder.setMode('none');
         // Explicitly hide any highlighted selectors to clear tooltips and overlays
         recorder.hideHighlightedSelector();
         // // Clear any current call metadata to remove persistent actionSelectors/tooltips

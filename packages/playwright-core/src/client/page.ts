@@ -806,7 +806,6 @@ export class Page extends ChannelOwner<channels.PageChannel> implements api.Page
     this._browserContext.setDefaultNavigationTimeout(0);
     this._browserContext.setDefaultTimeout(0);
     this._instrumentation?.onWillPause({ keepTestTimeout: !!_options?.__testHookKeepTestTimeout });
-    console.log("ENABLING RECORDER")
     await this._browserContext._channel.enableRecorder({
       mode: 'recording',
       language: 'javascript',
