@@ -21,8 +21,6 @@ import { BrowserContext } from './browserContext';
 import { commandsWithTracingSnapshots, pausesBeforeInputActions, slowMoActions } from '../protocol/debug';
 
 import type { CallMetadata, InstrumentationListener, SdkObject } from './instrumentation';
-import { Recorder } from './recorder';
-import { RecorderApp } from './recorder/recorderApp';
 
 const symbol = Symbol('Debugger');
 
@@ -61,9 +59,6 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
       return;
     if (shouldPauseOnCall(sdkObject, metadata) || (this._pauseOnNextStatement && shouldPauseBeforeStep(metadata)))
       await this.pause(sdkObject, metadata);
-    if (metadata.method === 'resume')
-      console.log('DEBUGGER resume called');
-      this.resume(false);
   }
 
   async _doSlowMo() {
@@ -87,21 +82,6 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
       return;
     this._enabled = true;
     metadata.pauseStartTime = monotonicTime();
-    try {
-      const recorder = await Recorder.show(this._context, RecorderApp.factory(this._context), {
-        mode: 'recording',
-        language: 'python',
-        testIdAttributeName: undefined,
-        handleSIGINT: false,
-        outputFile: "test_output.py"
-      });
-      // Explicitly set mode to 'recording' in case we're reusing an existing recorder
-      recorder.setMode('recording');
-      // Clear any previous script to start fresh
-      recorder.clearScript();
-    } catch (error) {
-      // Ignore recording
-    }
     const result = new Promise<void>(resolve => {
       this._pausedCallsMetadata.set(metadata, { resolve, sdkObject });
     });

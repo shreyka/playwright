@@ -33,7 +33,7 @@ import { WebSocketRouteDispatcher } from './webSocketRouteDispatcher';
 import { WritableStreamDispatcher } from './writableStreamDispatcher';
 import { createGuid } from '../utils/crypto';
 import { urlMatches } from '../../utils/isomorphic/urlMatch';
-import { RecorderApp } from '../recorder/recorderApp';
+import { EmptyRecorderApp, RecorderApp } from '../recorder/recorderApp';
 
 import type { Artifact } from '../artifact';
 import type { ConsoleMessage } from '../console';
@@ -305,7 +305,13 @@ export class BrowserContextDispatcher extends Dispatcher<BrowserContext, channel
   }
 
   async enableRecorder(params: channels.BrowserContextEnableRecorderParams): Promise<void> {
-    await Recorder.show(this._context, RecorderApp.factory(this._context), params);
+    const recorder = await Recorder.show(this._context, RecorderApp.factory(this._context), params);
+    if (params.mode) {
+      recorder.setMode(params.mode);
+    }
+    if (params.outputFile) {
+      recorder.setOutput(params.language || 'python', params.outputFile);
+    }
   }
 
   async pause(params: channels.BrowserContextPauseParams, metadata: CallMetadata) {
@@ -321,10 +327,10 @@ export class BrowserContextDispatcher extends Dispatcher<BrowserContext, channel
     try {
       const recorder = await Recorder.showInspector(this._context, { omitCallTracking: true }, () => Promise.resolve(new EmptyRecorderApp()));
       if (recorder) {
-        recorder.setMode('none');
+        recorder.setMode('standby');
         // Explicitly hide any highlighted selectors to clear tooltips and overlays
         recorder.hideHighlightedSelector();
-        // Clear any current call metadata to remove persistent actionSelectors/tooltips
+        // // Clear any current call metadata to remove persistent actionSelectors/tooltips
         recorder.clearCurrentCalls();
       }
     } catch (error) {
