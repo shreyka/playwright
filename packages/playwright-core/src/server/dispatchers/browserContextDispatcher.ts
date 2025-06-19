@@ -45,6 +45,8 @@ import type { DispatcherScope } from './dispatcher';
 import type { FrameDispatcher } from './frameDispatcher';
 import type * as channels from '@protocol/channels';
 
+const recorderSymbol = Symbol('recorderSymbol');
+
 export class BrowserContextDispatcher extends Dispatcher<BrowserContext, channels.BrowserContextChannel, DispatcherScope> implements channels.BrowserContextChannel {
   _type_EventTarget = true;
   _type_BrowserContext = true;
@@ -308,6 +310,26 @@ export class BrowserContextDispatcher extends Dispatcher<BrowserContext, channel
 
   async pause(params: channels.BrowserContextPauseParams, metadata: CallMetadata) {
     // Debugger will take care of this.
+  }
+
+  async resume(params: channels.BrowserContextResumeParams, metadata: CallMetadata) {
+    // Resume only the current context's debugger, not all recorders
+    this._context.debugger().resume(false);
+    
+    // Set recorder mode to 'none' to completely stop recording and hide all UI overlays
+    // This ensures that the next pause() call will start fresh with recording mode
+    try {
+      const recorder = await Recorder.showInspector(this._context, { omitCallTracking: true }, () => Promise.resolve(new EmptyRecorderApp()));
+      if (recorder) {
+        recorder.setMode('none');
+        // Explicitly hide any highlighted selectors to clear tooltips and overlays
+        recorder.hideHighlightedSelector();
+        // Clear any current call metadata to remove persistent actionSelectors/tooltips
+        recorder.clearCurrentCalls();
+      }
+    } catch (error) {
+      // Ignore errors if recorder is not available
+    }
   }
 
   async newCDPSession(params: channels.BrowserContextNewCDPSessionParams): Promise<channels.BrowserContextNewCDPSessionResult> {

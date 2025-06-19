@@ -7,7 +7,7 @@ const { chromium } = require('./packages/playwright-core');
   
   // Launch browser
   console.log('\n🚀 Launching browser...');
-  const browser = await chromium.connectOverCDP('ws://127.0.0.1:9222/devtools/browser/4543208b-615f-40dd-99ff-490b3c4eb85f');
+  const browser = await chromium.connectOverCDP('ws://127.0.0.1:9222/devtools/browser/1a6e480a-1957-49ad-a654-a2f62e869699');
   
   const page = await browser.newPage();
   await page.goto('https://suppliernet.walgreens.com/Login.jsp#');

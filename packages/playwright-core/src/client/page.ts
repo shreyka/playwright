@@ -806,16 +806,20 @@ export class Page extends ChannelOwner<channels.PageChannel> implements api.Page
     this._browserContext.setDefaultNavigationTimeout(0);
     this._browserContext.setDefaultTimeout(0);
     this._instrumentation?.onWillPause({ keepTestTimeout: !!_options?.__testHookKeepTestTimeout });
-    await this._browserContext._channel.enableRecorder({
-      mode: 'recording',
-      language: 'python',
-      testIdAttributeName: undefined,
-      handleSIGINT: false,
-      outputFile: "test_output.py"
-    });
+    // await this._browserContext._channel.enableRecorder({
+    //   mode: 'recording',
+    //   language: 'python',
+    //   testIdAttributeName: undefined,
+    //   handleSIGINT: false,
+    //   outputFile: "test_output.py"
+    // });
     await this._closedOrCrashedScope.safeRace(this.context()._channel.pause());
     this._browserContext.setDefaultNavigationTimeout(defaultNavigationTimeout);
     this._browserContext.setDefaultTimeout(defaultTimeout);
+  }
+  
+  async resume() {
+    await this._closedOrCrashedScope.safeRace(this.context()._channel.resume());
   }
 
   async pdf(options: PDFOptions = {}): Promise<Buffer> {

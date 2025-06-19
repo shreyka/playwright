@@ -18,7 +18,7 @@ const { chromium } = require('./packages/playwright-core');
   
   // === STEP 2: Connect via CDP to localhost:9222 ===
   console.log('\n🔌 === STEP 2: Connect via CDP to localhost:9222 ===');
-  const cdpEndpoint = 'ws://127.0.0.1:9222/devtools/browser/4543208b-615f-40dd-99ff-490b3c4eb85f';
+  const cdpEndpoint = 'ws://127.0.0.1:9222/devtools/browser/d2eee8ad-5f38-4703-a557-248bc5f3508c';
   
   try {
     const cdpBrowser = await chromium.connectOverCDP(cdpEndpoint);
@@ -53,10 +53,10 @@ const { chromium } = require('./packages/playwright-core');
     await firstPausePromise;
     console.log('🎉 First CDP pause/resume cycle completed!');
 
-    console.log("Resumed and testing clicks now")
-    await cdpPage.waitForSelector("[data-test=\"header-search-input\"]")
-    await cdpPage.locator("[data-test=\"header-search-input\"]").click()
-    await cdpPage.waitForTimeout(10000);
+    // console.log("Resumed and testing clicks now")
+    // await cdpPage.waitForSelector("[data-test=\"header-search-input\"]")
+    // await cdpPage.locator("[data-test=\"header-search-input\"]").click()
+    // await cdpPage.waitForTimeout(10000);
     
     // === STEP 4: Second pause/resume cycle ===
     console.log('\n🎬 === STEP 4: Second pause/resume cycle ===');

@@ -28,7 +28,7 @@ const { chromium } = require('./packages/playwright-core');
       setTimeout(() => {
         console.log('⏰ 20 seconds elapsed - auto-resuming...');
         page.resume();
-      }, 20000);
+      }, 10000);
     });
     
     // Wait for either manual resume or 60-second timeout

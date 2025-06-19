@@ -1278,6 +1278,9 @@ BrowserContext:
     pause:
       experimental: True
 
+    resume:
+      experimental: True
+
     enableRecorder:
       experimental: True
       parameters:

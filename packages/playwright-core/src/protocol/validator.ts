@@ -1017,6 +1017,8 @@ scheme.BrowserContextStorageStateResult = tObject({
 });
 scheme.BrowserContextPauseParams = tOptional(tObject({}));
 scheme.BrowserContextPauseResult = tOptional(tObject({}));
+scheme.BrowserContextResumeParams = tOptional(tObject({}));
+scheme.BrowserContextResumeResult = tOptional(tObject({}));
 scheme.BrowserContextEnableRecorderParams = tObject({
   language: tOptional(tString),
   mode: tOptional(tEnum(['inspecting', 'recording'])),

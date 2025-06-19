@@ -95,6 +95,10 @@ export class Recorder implements InstrumentationListener, IRecorder {
     }
   }
 
+  clearScript() {
+    this._contextRecorder.clearScript();
+  }
+
   private async _install(recorderApp: IRecorderApp) {
     this._recorderApp = recorderApp;
     recorderApp.once('close', () => {
@@ -255,6 +259,10 @@ export class Recorder implements InstrumentationListener, IRecorder {
   setHighlightedAriaTemplate(ariaTemplate: AriaTemplateNode) {
     this._highlightedElement = { ariaTemplate };
     this._refreshOverlay();
+  }
+
+  clearCurrentCalls() {
+    this._currentCallsMetadata.clear();
   }
 
   hideHighlightedSelector() {
