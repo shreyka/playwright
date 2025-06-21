@@ -813,7 +813,6 @@ export class Page extends ChannelOwner<channels.PageChannel> implements api.Page
       handleSIGINT: false,
       outputFile: "test-output.js"
     });
-    console.log("ENABLED RECORDER")
     await this._closedOrCrashedScope.safeRace(this.context()._channel.pause());
     this._browserContext.setDefaultNavigationTimeout(defaultNavigationTimeout);
     this._browserContext.setDefaultTimeout(defaultTimeout);

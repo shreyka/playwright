@@ -5,7 +5,9 @@ const { chromium } = require('playwright');
     headless: false
   });
   const context = await browser.newContext();
-  await page.goto('https://www.browserscan.net/');
+  await page.getByRole('link', { name: 'Login' }).click();
+  await page.getByRole('textbox', { name: 'Enter your Password' }).click();
+  await page.getByRole('textbox', { name: 'Enter your OneID' }).click();
 
   // ---------------------
   await context.close();

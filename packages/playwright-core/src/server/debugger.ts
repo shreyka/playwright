@@ -90,7 +90,6 @@ export class Debugger extends EventEmitter implements InstrumentationListener {
   }
 
   resume(step: boolean) {
-    console.log('DEBUGGER resume finished');
     if (!this.isPaused())
       return;
 

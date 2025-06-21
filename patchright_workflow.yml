@@ -1,0 +1,95 @@
+name: PatchRight Workflow
+
+on:
+  # enabling manual trigger
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Playwright Version'
+        default: ''
+  # running every hour
+  schedule:
+    - cron: '48 * * * *'
+
+
+permissions:
+  actions: none
+  attestations: none
+  checks: none
+  contents: write
+  deployments: none
+  id-token: none
+  issues: none
+  discussions: none
+  packages: none
+  pages: none
+  pull-requests: none
+  repository-projects: none
+  security-events: none
+  statuses: none
+
+
+env:
+  REPO: ${{ github.repository }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  patchright-workflow:
+    name: "Patchright Workflow: Install, Patch, Build and Publish Patchright Driver"
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node v18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          registry-url: 'https://registry.npmjs.org'
+      - name: Install TS-Morph
+        run: npm install
+
+      - name: Check Release Version
+        id: version_check
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "proceed=true" >>$GITHUB_OUTPUT
+            echo "playwright_version=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          else
+            chmod +x utils/release_version_check.sh
+            utils/release_version_check.sh
+          fi
+
+      - name: Install Playwright Driver
+        if: steps.version_check.outputs.proceed == 'true'
+        run: |
+          git clone https://github.com/microsoft/playwright --branch ${{ env.playwright_version }}
+          cd playwright
+          npm ci
+
+      - name: Patch Playwright Driver
+        if: steps.version_check.outputs.proceed == 'true'
+        run: |
+          cd playwright
+          node "../patchright_driver_patch.js"
+
+      - name: Generate Playwright Channels
+        if: steps.version_check.outputs.proceed == 'true'
+        # Ignore the error exit code, as the script exits 1 when a file is modified.
+        continue-on-error: true
+        run: |
+          cd playwright
+          node utils/generate_channels.js
+
+      - name: Build Patchright Driver
+        if: steps.version_check.outputs.proceed == 'true'
+        run: |
+          cd playwright
+          npm run build
+          npx playwright install-deps
+          chmod +x utils/build/build-playwright-driver.sh
+          utils/build/build-playwright-driver.sh
+
+      - name: Publish Patchright Driver
+        if: steps.version_check.outputs.proceed == 'true'
+        run: |
+          chmod +x utils/release_driver.sh
+          utils/release_driver.sh

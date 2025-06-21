@@ -485,7 +485,7 @@ class RecordActionTool implements RecorderTool {
   private _shouldIgnoreMouseEvent(event: MouseEvent): boolean {
     const target = this._recorder.deepEventTarget(event);
     const nodeName = target.nodeName;
-    if (nodeName === 'SELECT' || nodeName === 'OPTION')
+    if (nodeName === 'OPTION')
       return true;
     if (nodeName === 'INPUT' && ['date', 'range'].includes((target as HTMLInputElement).type))
       return true;
