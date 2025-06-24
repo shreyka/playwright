@@ -18,7 +18,7 @@ const { chromium } = require('./packages/playwright-core');
   
   // === STEP 2: Connect via CDP to localhost:9222 ===
   console.log('\n🔌 === STEP 2: Connect via CDP to localhost:9222 ===');
-  const cdpEndpoint = 'ws://127.0.0.1:9222/devtools/browser/39454599-fca8-4a58-9086-0129b2b7b186';
+  const cdpEndpoint = 'ws://127.0.0.1:9222/devtools/browser/3a342059-b1fb-4d12-b0d5-251c610252c7';
   
   try {
     const cdpBrowser = await chromium.connectOverCDP(cdpEndpoint);

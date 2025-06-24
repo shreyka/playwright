@@ -122,6 +122,11 @@ export class JavaScriptLanguageGenerator implements LanguageGenerator {
         const commentIfNeeded = this._isTest ? '' : '// ';
         return `${commentIfNeeded}await expect(${subject}.${this._asLocator(action.selector)}).toMatchAriaSnapshot(${quoteMultiline(action.snapshot, `${commentIfNeeded}  `)});`;
       }
+      case 'screenshot': {
+        const timestamp = new Date().getTime();
+        const filename = action.path || `screenshot-${timestamp}.png`;
+        return `await ${subject}.screenshot({ path: ${quote(filename)} });`;
+      }
     }
   }
 

@@ -125,10 +125,15 @@ export class PythonLanguageGenerator implements LanguageGenerator {
         return `expect(${subject}.${this._asLocator(action.selector)}).to_be_visible()`;
       case 'assertValue': {
         const assertion = action.value ? `to_have_value(${quote(action.value)})` : `to_be_empty()`;
-        return `expect(${subject}.${this._asLocator(action.selector)}).${assertion};`;
+        return `expect(${subject}.${this._asLocator(action.selector)}).${assertion}`;
       }
       case 'assertSnapshot':
         return `expect(${subject}.${this._asLocator(action.selector)}).to_match_aria_snapshot(${quote(action.snapshot)})`;
+      case 'screenshot': {
+        const timestamp = new Date().getTime();
+        const filename = action.path || `screenshot-${timestamp}.png`;
+        return `${subject}.screenshot(path=${quote(filename)})`;
+      }
     }
   }
 

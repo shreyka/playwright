@@ -149,6 +149,11 @@ export class CSharpLanguageGenerator implements LanguageGenerator {
       }
       case 'assertSnapshot':
         return `await Expect(${subject}.${this._asLocator(action.selector)}).ToMatchAriaSnapshotAsync(${quote(action.snapshot)});`;
+      case 'screenshot': {
+        const timestamp = new Date().getTime();
+        const filename = action.path || `screenshot-${timestamp}.png`;
+        return `await ${subject}.ScreenshotAsync(new PageScreenshotOptions { Path = ${quote(filename)} });`;
+      }
     }
   }
 

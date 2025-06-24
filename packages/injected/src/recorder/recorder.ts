@@ -808,6 +808,7 @@ class Overlay {
   private _assertTextToggle: HTMLElement;
   private _assertValuesToggle: HTMLElement;
   private _assertSnapshotToggle: HTMLElement;
+  private _screenshotToggle: HTMLElement;
   private _offsetX = 0;
   private _dragState: { offsetX: number, dragStart: { x: number, y: number } } | undefined;
   private _measure: { width: number, height: number } = { width: 0, height: 0 };
@@ -829,35 +830,48 @@ class Overlay {
     this._recordToggle.appendChild(this._recorder.document.createElement('x-div'));
     toolsListElement.appendChild(this._recordToggle);
 
+    // Create hidden elements but don't append them to keep the structure intact
     this._pickLocatorToggle = this._recorder.document.createElement('x-pw-tool-item');
     this._pickLocatorToggle.title = 'Pick locator';
     this._pickLocatorToggle.classList.add('pick-locator');
     this._pickLocatorToggle.appendChild(this._recorder.document.createElement('x-div'));
-    toolsListElement.appendChild(this._pickLocatorToggle);
 
     this._assertVisibilityToggle = this._recorder.document.createElement('x-pw-tool-item');
     this._assertVisibilityToggle.title = 'Assert visibility';
     this._assertVisibilityToggle.classList.add('visibility');
     this._assertVisibilityToggle.appendChild(this._recorder.document.createElement('x-div'));
-    toolsListElement.appendChild(this._assertVisibilityToggle);
 
     this._assertTextToggle = this._recorder.document.createElement('x-pw-tool-item');
     this._assertTextToggle.title = 'Assert text';
     this._assertTextToggle.classList.add('text');
     this._assertTextToggle.appendChild(this._recorder.document.createElement('x-div'));
-    toolsListElement.appendChild(this._assertTextToggle);
 
     this._assertValuesToggle = this._recorder.document.createElement('x-pw-tool-item');
     this._assertValuesToggle.title = 'Assert value';
     this._assertValuesToggle.classList.add('value');
     this._assertValuesToggle.appendChild(this._recorder.document.createElement('x-div'));
-    toolsListElement.appendChild(this._assertValuesToggle);
 
     this._assertSnapshotToggle = this._recorder.document.createElement('x-pw-tool-item');
     this._assertSnapshotToggle.title = 'Assert snapshot';
     this._assertSnapshotToggle.classList.add('snapshot');
     this._assertSnapshotToggle.appendChild(this._recorder.document.createElement('x-div'));
-    toolsListElement.appendChild(this._assertSnapshotToggle);
+
+    this._screenshotToggle = this._recorder.document.createElement('x-pw-tool-item');
+    this._screenshotToggle.title = 'Take screenshot';
+    this._screenshotToggle.classList.add('screenshot');
+    this._screenshotToggle.style.width = 'auto';
+    this._screenshotToggle.style.padding = '0 12px';
+    this._screenshotToggle.style.whiteSpace = 'nowrap';
+    this._screenshotToggle.style.border = '1px solid currentColor';
+    this._screenshotToggle.style.borderRadius = '6px';
+    this._screenshotToggle.style.fontSize = '12px';
+    this._screenshotToggle.style.fontWeight = 'normal';
+    this._screenshotToggle.style.display = 'flex';
+    this._screenshotToggle.style.alignItems = 'center';
+    this._screenshotToggle.style.justifyContent = 'center';
+    this._screenshotToggle.style.height = '28px';
+    this._screenshotToggle.textContent = 'TAKE SCREENSHOT';
+    toolsListElement.appendChild(this._screenshotToggle);
 
     this._updateVisualPosition();
     this._refreshListeners();
@@ -874,37 +888,13 @@ class Overlay {
           return;
         this._recorder.setMode(this._recorder.state.mode === 'none' || this._recorder.state.mode === 'standby' || this._recorder.state.mode === 'inspecting' ? 'recording' : 'standby');
       }),
-      addEventListener(this._pickLocatorToggle, 'click', () => {
-        if (this._pickLocatorToggle.classList.contains('disabled'))
-          return;
-        const newMode: Record<Mode, Mode> = {
-          'inspecting': 'standby',
-          'none': 'inspecting',
-          'standby': 'inspecting',
-          'recording': 'recording-inspecting',
-          'recording-inspecting': 'recording',
-          'assertingText': 'recording-inspecting',
-          'assertingVisibility': 'recording-inspecting',
-          'assertingValue': 'recording-inspecting',
-          'assertingSnapshot': 'recording-inspecting',
-        };
-        this._recorder.setMode(newMode[this._recorder.state.mode]);
-      }),
-      addEventListener(this._assertVisibilityToggle, 'click', () => {
-        if (!this._assertVisibilityToggle.classList.contains('disabled'))
-          this._recorder.setMode(this._recorder.state.mode === 'assertingVisibility' ? 'recording' : 'assertingVisibility');
-      }),
-      addEventListener(this._assertTextToggle, 'click', () => {
-        if (!this._assertTextToggle.classList.contains('disabled'))
-          this._recorder.setMode(this._recorder.state.mode === 'assertingText' ? 'recording' : 'assertingText');
-      }),
-      addEventListener(this._assertValuesToggle, 'click', () => {
-        if (!this._assertValuesToggle.classList.contains('disabled'))
-          this._recorder.setMode(this._recorder.state.mode === 'assertingValue' ? 'recording' : 'assertingValue');
-      }),
-      addEventListener(this._assertSnapshotToggle, 'click', () => {
-        if (!this._assertSnapshotToggle.classList.contains('disabled'))
-          this._recorder.setMode(this._recorder.state.mode === 'assertingSnapshot' ? 'recording' : 'assertingSnapshot');
+      addEventListener(this._screenshotToggle, 'click', () => {
+        if (!this._screenshotToggle.classList.contains('disabled')) {
+          this._recorder.recordAction({
+            name: 'screenshot',
+            signals: [],
+          });
+        }
       }),
     ];
   }
@@ -930,6 +920,7 @@ class Overlay {
     this._assertValuesToggle.classList.toggle('disabled', state.mode === 'none' || state.mode === 'standby' || state.mode === 'inspecting');
     this._assertSnapshotToggle.classList.toggle('toggled', state.mode === 'assertingSnapshot');
     this._assertSnapshotToggle.classList.toggle('disabled', state.mode === 'none' || state.mode === 'standby' || state.mode === 'inspecting');
+    this._screenshotToggle.classList.toggle('disabled', state.mode === 'none' || state.mode === 'standby' || state.mode === 'inspecting');
     if (this._offsetX !== state.overlay.offsetX) {
       this._offsetX = state.overlay.offsetX;
       this._updateVisualPosition();

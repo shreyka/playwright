@@ -136,6 +136,11 @@ export class JavaLanguageGenerator implements LanguageGenerator {
       }
       case 'assertSnapshot':
         return `assertThat(${subject}.${this._asLocator(action.selector, inFrameLocator)}).matchesAriaSnapshot(${quote(action.snapshot)});`;
+      case 'screenshot': {
+        const timestamp = new Date().getTime();
+        const filename = action.path || `screenshot-${timestamp}.png`;
+        return `${subject}.screenshot(new Page.ScreenshotOptions().setPath(Paths.get(${quote(filename)})));`;
+      }
     }
   }
 
