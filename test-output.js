@@ -5,9 +5,10 @@ const { chromium } = require('playwright');
     headless: false
   });
   const context = await browser.newContext();
-  await page.getByRole('link', { name: 'Login' }).click();
-  await page.getByRole('textbox', { name: 'Enter your Password' }).click();
-  await page.getByRole('textbox', { name: 'Enter your OneID' }).click();
+  await page.goto('https://www.browserscan.net/');
+  await page.locator('span').filter({ hasText: 'Verizon Business' }).click();
+  await page.goto('https://www.producthunt.com/');
+  await page.close();
 
   // ---------------------
   await context.close();

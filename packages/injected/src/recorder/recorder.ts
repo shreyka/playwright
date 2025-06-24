@@ -1297,12 +1297,13 @@ export class Recorder {
 
   private _updateHighlight(model: HighlightModel | null, userGesture: boolean) {
     let tooltipText = model?.tooltipText;
-    if (tooltipText === undefined && model?.selector)
-      tooltipText = this.injectedScript.utils.asLocator(this.state.language, model.selector);
-    if (model)
-      this.highlight.updateHighlight(model.elements.map(element => ({ element, color: model.color, tooltipText })));
-    else
-      this.highlight.clearHighlight();
+    // if (tooltipText === undefined && model?.selector)
+    //   tooltipText = this.injectedScript.utils.asLocator(this.state.language, model.selector);
+    this.highlight.clearHighlight();
+    // if (model)
+    //   this.highlight.updateHighlight(model.elements.map(element => ({ element, color: model.color, tooltipText })));
+    // else
+    //   this.highlight.clearHighlight();
     if (userGesture)
       this._delegate.highlightUpdated?.();
   }
