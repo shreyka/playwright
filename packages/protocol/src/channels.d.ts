@@ -516,7 +516,7 @@ export type LocalUtilsHarLookupResult = {
   message?: string,
   redirectURL?: string,
   status?: number,
-  headers?: NameValue[],
+  headers: NameValue[],
   body?: Binary,
 };
 export type LocalUtilsHarCloseParams = {
@@ -1851,6 +1851,7 @@ export type BrowserContextEnableRecorderParams = {
   outputFile?: string,
   handleSIGINT?: boolean,
   omitCallTracking?: boolean,
+  addVariable?: boolean,
 };
 export type BrowserContextEnableRecorderOptions = {
   language?: string,
@@ -1864,6 +1865,7 @@ export type BrowserContextEnableRecorderOptions = {
   outputFile?: string,
   handleSIGINT?: boolean,
   omitCallTracking?: boolean,
+  addVariable?: boolean,
 };
 export type BrowserContextEnableRecorderResult = void;
 export type BrowserContextNewCDPSessionParams = {

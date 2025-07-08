@@ -26,9 +26,9 @@ const { chromium } = require('./packages/playwright-core');
     
     const timeoutPromise = new Promise((resolve) => {
       setTimeout(() => {
-        console.log('⏰ 20 seconds elapsed - auto-resuming...');
+        console.log('⏰ 100 seconds elapsed - auto-resuming...');
         page.resume();
-      }, 10000);
+      }, 100000);
     });
     
     // Wait for either manual resume or 60-second timeout

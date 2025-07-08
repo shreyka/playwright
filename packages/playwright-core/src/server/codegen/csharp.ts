@@ -84,6 +84,85 @@ export class CSharpLanguageGenerator implements LanguageGenerator {
       ${pageAlias}.Dialog += ${pageAlias}_Dialog${signals.dialog.dialogAlias}_EventHandler;`);
     }
 
+    // Handle fill action with variable
+    if (action.name === 'fill' && action.asVariable) {
+      formatter.add(`var ${action.asVariable} = ${quote(action.text)};`);
+      formatter.add(`await ${subject}.${this._asLocator(action.selector)}.FillAsync(${action.asVariable});`);
+      return formatter.format();
+    }
+
+    // Handle click action with variable
+    if (action.name === 'click' && action.asVariable) {
+      // Extract the name parameter from the selector if it's a role selector
+      const roleMatch = action.selector.match(/internal:role=(\w+)(?:\[name="([^"]+)"[^\]]*\])?/);
+      if (roleMatch && roleMatch[2]) {
+        // For button clicks, store the button text as variable
+        formatter.add(`var ${action.asVariable} = ${quote(roleMatch[2])};`);
+        let method = 'Click';
+        if (action.clickCount === 2)
+          method = 'DblClick';
+        const options = toClickOptionsForSourceCode(action);
+        if (!Object.entries(options).length) {
+          formatter.add(`await ${subject}.GetByRole(AriaRole.${toPascal(roleMatch[1])}, new() { Name = ${action.asVariable} }).${method}Async();`);
+        } else {
+          const optionsString = formatObject(options, '    ', 'Locator' + method + 'Options');
+          formatter.add(`await ${subject}.GetByRole(AriaRole.${toPascal(roleMatch[1])}, new() { Name = ${action.asVariable} }).${method}Async(${optionsString});`);
+        }
+        return formatter.format();
+      }
+      // Fallback to original behavior
+      formatter.add(`var ${action.asVariable} = ${subject}.${this._asLocator(action.selector)};`);
+      let method = 'Click';
+      if (action.clickCount === 2)
+        method = 'DblClick';
+      const options = toClickOptionsForSourceCode(action);
+      if (!Object.entries(options).length) {
+        formatter.add(`await ${action.asVariable}.${method}Async();`);
+      } else {
+        const optionsString = formatObject(options, '    ', 'Locator' + method + 'Options');
+        formatter.add(`await ${action.asVariable}.${method}Async(${optionsString});`);
+      }
+      return formatter.format();
+    }
+
+    // Handle other actions with variable (check, uncheck, select, press)
+    if (['check', 'uncheck', 'select', 'press'].includes(action.name) && 'asVariable' in action && action.asVariable) {
+      const variableAction = action as actions.CheckAction | actions.UncheckAction | actions.SelectAction | actions.PressAction;
+      
+      // Generate the method call
+      let methodCall = '';
+      if (action.name === 'check' || action.name === 'uncheck') {
+        // Extract the name parameter from the selector if it's a role selector
+        const roleMatch = variableAction.selector.match(/internal:role=(\w+)(?:\[name="([^"]+)"[^\]]*\])?/);
+        if (roleMatch && roleMatch[2]) {
+          // For checkbox, store the checkbox label/name as variable
+          formatter.add(`var ${variableAction.asVariable} = ${quote(roleMatch[2])};`);
+          const methodName = action.name === 'check' ? 'CheckAsync' : 'UncheckAsync';
+          methodCall = `await ${subject}.GetByRole(AriaRole.${toPascal(roleMatch[1])}, new() { Name = ${variableAction.asVariable} }).${methodName}();`;
+        } else {
+          // Fallback to original behavior
+          formatter.add(`var ${variableAction.asVariable} = ${subject}.${this._asLocator(variableAction.selector)};`);
+          const methodName = action.name === 'check' ? 'CheckAsync' : 'UncheckAsync';
+          methodCall = `await ${variableAction.asVariable}.${methodName}();`;
+        }
+      } else if (action.name === 'select') {
+        const selectAction = action as actions.SelectAction;
+        // For select, store the selected option value as variable
+        formatter.add(`var ${variableAction.asVariable} = ${formatObject(selectAction.options.length === 1 ? selectAction.options[0] : selectAction.options)};`);
+        methodCall = `await ${subject}.${this._asLocator(variableAction.selector)}.SelectOptionAsync(${variableAction.asVariable});`;
+      } else if (action.name === 'press') {
+        // Original behavior for press
+        const pressAction = action as actions.PressAction;
+        formatter.add(`var ${variableAction.asVariable} = ${subject}.${this._asLocator(variableAction.selector)};`);
+        const modifiers = toKeyboardModifiers(pressAction.modifiers);
+        const shortcut = [...modifiers, pressAction.key].join('+');
+        methodCall = `await ${variableAction.asVariable}.PressAsync(${quote(shortcut)});`;
+      }
+      
+      formatter.add(methodCall);
+      return formatter.format();
+    }
+
     const lines: string[] = [];
     lines.push(this._generateActionCall(subject, actionInContext));
 

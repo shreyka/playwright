@@ -18,7 +18,7 @@ const { chromium } = require('./packages/playwright-core');
   
   // === STEP 2: Connect via CDP to localhost:9222 ===
   console.log('\n🔌 === STEP 2: Connect via CDP to localhost:9222 ===');
-  const cdpEndpoint = 'ws://127.0.0.1:9222/devtools/browser/3a342059-b1fb-4d12-b0d5-251c610252c7';
+  const cdpEndpoint = 'ws://127.0.0.1:9222/devtools/browser/05f08a01-bb24-4a46-a213-e6a1e98e518c';
   
   try {
     const cdpBrowser = await chromium.connectOverCDP(cdpEndpoint);
@@ -29,7 +29,7 @@ const { chromium } = require('./packages/playwright-core');
     const cdpPage = cdpContext.pages()[0];
     
     console.log('📄 CDP Page URL:', await cdpPage.url());
-    await cdpPage.goto("https://suppliernet.walgreens.com/Login.jsp#")
+    await cdpPage.goto("https://extaz-oci.aetna.com/pocui/join-the-aetna-network")
     
     // === STEP 3: First pause/resume cycle ===
     console.log('\n🎬 === STEP 3: First pause/resume cycle ===');
@@ -47,7 +47,7 @@ const { chromium } = require('./packages/playwright-core');
       } catch (error) {
         console.error('❌ Error on first CDP resume:', error.message);
       }
-    }, 15000);
+    }, 45000);
     
     // Wait for first pause to complete
     await firstPausePromise;
@@ -85,7 +85,7 @@ const { chromium } = require('./packages/playwright-core');
     await cdpPage.goto('https://www.browserscan.net');
     console.log('✅ Navigation to browserscan.net completed!');
     
-    await cdpPage.waitForTimeout(10000);
+    await cdpPage.waitForTimeout(20000);
     
     const finalUrl = await cdpPage.url();
     console.log('📍 Final URL:', finalUrl);

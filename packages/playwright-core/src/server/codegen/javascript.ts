@@ -61,6 +61,12 @@ export class JavaScriptLanguageGenerator implements LanguageGenerator {
   });`);
     }
 
+    if (action.name === 'fill' && action.asVariable) {
+      formatter.add(`const ${action.asVariable} = ${quote(action.text)};`);
+      formatter.add(wrapWithStep(actionInContext.description, `await ${subject}.${this._asLocator(action.selector)}.fill(${action.asVariable});`));
+      return formatter.format();
+    }
+
     if (signals.popup)
       formatter.add(`const ${signals.popup.popupAlias}Promise = ${pageAlias}.waitForEvent('popup');`);
     if (signals.download)
@@ -89,11 +95,51 @@ export class JavaScriptLanguageGenerator implements LanguageGenerator {
           method = 'dblclick';
         const options = toClickOptionsForSourceCode(action);
         const optionsString = formatOptions(options, false);
+        if (action.asVariable) {
+          // Extract the name parameter from the selector if it's a role selector
+          // The selector format is: internal:role=button[name="Continue"i]
+          const roleMatch = action.selector.match(/internal:role=(\w+)(?:\[name="([^"]+)"[^\]]*\])?/);
+          if (roleMatch && roleMatch[2]) {
+            // For button clicks, store the button text as variable
+            const lines: string[] = [];
+            lines.push(`const ${action.asVariable} = ${quote(roleMatch[2])};`);
+            lines.push(`await ${subject}.getByRole(${quote(roleMatch[1])}, { name: ${action.asVariable} }).${method}(${optionsString});`);
+            return lines.join('\n');
+          }
+          // Fallback to original behavior
+          const lines: string[] = [];
+          lines.push(`const ${action.asVariable} = ${subject}.${this._asLocator(action.selector)};`);
+          lines.push(`await ${action.asVariable}.${method}(${optionsString});`);
+          return lines.join('\n');
+        }
         return `await ${subject}.${this._asLocator(action.selector)}.${method}(${optionsString});`;
       }
       case 'check':
+        if (action.asVariable) {
+          // Extract the name parameter from the selector if it's a role selector
+          // The selector format is: internal:role=checkbox[name="* PLEASE VERIFY THAT THE"i]
+          const roleMatch = action.selector.match(/internal:role=(\w+)(?:\[name="([^"]+)"[^\]]*\])?/);
+          if (roleMatch && roleMatch[2]) {
+            // For checkbox, store the checkbox label/name as variable
+            const lines: string[] = [];
+            lines.push(`const ${action.asVariable} = ${quote(roleMatch[2])};`);
+            lines.push(`await ${subject}.getByRole(${quote(roleMatch[1])}, { name: ${action.asVariable} }).check();`);
+            return lines.join('\n');
+          }
+          // Fallback to original behavior
+          const lines: string[] = [];
+          lines.push(`const ${action.asVariable} = ${subject}.${this._asLocator(action.selector)};`);
+          lines.push(`await ${action.asVariable}.check();`);
+          return lines.join('\n');
+        }
         return `await ${subject}.${this._asLocator(action.selector)}.check();`;
       case 'uncheck':
+        if (action.asVariable) {
+          const lines: string[] = [];
+          lines.push(`const ${action.asVariable} = ${subject}.${this._asLocator(action.selector)};`);
+          lines.push(`await ${action.asVariable}.uncheck();`);
+          return lines.join('\n');
+        }
         return `await ${subject}.${this._asLocator(action.selector)}.uncheck();`;
       case 'fill':
         return `await ${subject}.${this._asLocator(action.selector)}.fill(${quote(action.text)});`;
@@ -102,11 +148,25 @@ export class JavaScriptLanguageGenerator implements LanguageGenerator {
       case 'press': {
         const modifiers = toKeyboardModifiers(action.modifiers);
         const shortcut = [...modifiers, action.key].join('+');
+        if (action.asVariable) {
+          const lines: string[] = [];
+          lines.push(`const ${action.asVariable} = ${subject}.${this._asLocator(action.selector)};`);
+          lines.push(`await ${action.asVariable}.press(${quote(shortcut)});`);
+          return lines.join('\n');
+        }
         return `await ${subject}.${this._asLocator(action.selector)}.press(${quote(shortcut)});`;
       }
       case 'navigate':
         return `await ${subject}.goto(${quote(action.url)});`;
       case 'select':
+        if (action.asVariable) {
+          // For select, store the selected option value as variable
+          const lines: string[] = [];
+          const optionValue = action.options.length === 1 ? action.options[0] : action.options;
+          lines.push(`const ${action.asVariable} = ${formatObject(optionValue)};`);
+          lines.push(`await ${subject}.${this._asLocator(action.selector)}.selectOption(${action.asVariable});`);
+          return lines.join('\n');
+        }
         return `await ${subject}.${this._asLocator(action.selector)}.selectOption(${formatObject(action.options.length === 1 ? action.options[0] : action.options)});`;
       case 'assertText':
         return `${this._isTest ? '' : '// '}await expect(${subject}.${this._asLocator(action.selector)}).${action.substring ? 'toContainText' : 'toHaveText'}(${quote(action.text)});`;

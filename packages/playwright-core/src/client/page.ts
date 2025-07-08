@@ -811,7 +811,8 @@ export class Page extends ChannelOwner<channels.PageChannel> implements api.Page
       language: 'javascript',
       testIdAttributeName: undefined,
       handleSIGINT: false,
-      outputFile: "test-output.js"
+      outputFile: "test-output.js",
+      addVariable: false
     });
     await this._closedOrCrashedScope.safeRace(this.context()._channel.pause());
     this._browserContext.setDefaultNavigationTimeout(defaultNavigationTimeout);

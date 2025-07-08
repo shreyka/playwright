@@ -20,11 +20,59 @@ import type { LanguageGenerator, LanguageGeneratorOptions } from './types';
 import type * as actions from '@recorder/actions';
 
 export function generateCode(actions: actions.ActionInContext[], languageGenerator: LanguageGenerator, options: LanguageGeneratorOptions) {
+  // Filter out duplicate actions when a variable version follows
+  const filteredActions: actions.ActionInContext[] = [];
+  
+  for (let i = 0; i < actions.length; i++) {
+    const currentAction = actions[i];
+    const nextAction = actions[i + 1];
+    
+    // Check if the next action is the same action but with asVariable
+    if (nextAction && isSameActionWithVariable(currentAction.action, nextAction.action)) {
+      // Skip the current action, the next one (with variable) will be used instead
+      continue;
+    }
+    
+    filteredActions.push(currentAction);
+  }
+  
   const header = languageGenerator.generateHeader(options);
   const footer = languageGenerator.generateFooter(options.saveStorage);
-  const actionTexts = actions.map(a => languageGenerator.generateAction(a)).filter(Boolean);
+  const actionTexts = filteredActions.map(a => languageGenerator.generateAction(a)).filter(Boolean);
   const text = [header, ...actionTexts, footer].join('\n');
   return { header, footer, actionTexts, text };
+}
+
+function isSameActionWithVariable(action1: actions.Action, action2: actions.Action): boolean {
+  // Check if action2 is the same as action1 but with asVariable property
+  if (!action2.asVariable || action1.asVariable)
+    return false;
+  
+  // Compare action types
+  if (action1.name !== action2.name)
+    return false;
+  
+  // Compare selectors for actions that have them
+  if ('selector' in action1 && 'selector' in action2) {
+    if (action1.selector !== action2.selector)
+      return false;
+  }
+  
+  // Compare specific properties based on action type
+  switch (action1.name) {
+    case 'fill':
+      return (action1 as actions.FillAction).text === (action2 as actions.FillAction).text;
+    case 'select':
+      return JSON.stringify((action1 as actions.SelectAction).options) === JSON.stringify((action2 as actions.SelectAction).options);
+    case 'click':
+    case 'check':
+    case 'uncheck':
+    case 'press':
+      // For these actions, selector match is enough
+      return true;
+    default:
+      return false;
+  }
 }
 
 export function sanitizeDeviceOptions(device: any, options: BrowserContextOptions): BrowserContextOptions {

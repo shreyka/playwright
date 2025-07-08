@@ -682,7 +682,7 @@ LocalUtils:
         redirectURL: string?
         status: number?
         headers:
-          type: array?
+          type: array
           items: NameValue
         body: binary?
 
@@ -1299,6 +1299,7 @@ BrowserContext:
         outputFile: string?
         handleSIGINT: boolean?
         omitCallTracking: boolean?
+        addVariable: boolean?
 
     newCDPSession:
       parameters:

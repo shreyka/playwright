@@ -49,19 +49,23 @@ export type ClickAction = ActionWithSelector & {
   modifiers: number,
   clickCount: number,
   position?: Point,
+  asVariable?: string,
 };
 
 export type CheckAction = ActionWithSelector & {
   name: 'check',
+  asVariable?: string,
 };
 
 export type UncheckAction = ActionWithSelector & {
   name: 'uncheck',
+  asVariable?: string,
 };
 
 export type FillAction = ActionWithSelector & {
   name: 'fill',
   text: string,
+  asVariable?: string,
 };
 
 export type NavigateAction = ActionBase & {
@@ -83,11 +87,13 @@ export type PressAction = ActionBase & {
   selector: string,
   key: string,
   modifiers: number,
+  asVariable?: string,
 };
 
 export type SelectAction = ActionWithSelector & {
   name: 'select',
   options: string[],
+  asVariable?: string,
 };
 
 export type SetInputFilesAction = ActionWithSelector & {

@@ -17,7 +17,7 @@
 import { toClickOptionsForSourceCode, toKeyboardModifiers, toSignalMap } from './language';
 import { deviceDescriptors } from '../deviceDescriptors';
 import { JavaScriptFormatter } from './javascript';
-import { asLocator, escapeWithQuotes } from '../../utils';
+import { asLocator, escapeWithQuotes, toSnakeCase } from '../../utils';
 
 import type { BrowserContextOptions } from '../../../types/types';
 import type * as types from '../types';
@@ -71,6 +71,82 @@ export class JavaLanguageGenerator implements LanguageGenerator {
         System.out.println(String.format("Dialog message: %s", dialog.message()));
         dialog.dismiss();
       });`);
+    }
+
+    // Handle fill action with variable
+    if (action.name === 'fill' && action.asVariable) {
+      formatter.add(`String ${action.asVariable} = ${quote(action.text)};`);
+      formatter.add(`${subject}.${this._asLocator(action.selector, !!actionInContext.frame.framePath.length)}.fill(${action.asVariable});`);
+      return formatter.format();
+    }
+
+    // Handle click action with variable
+    if (action.name === 'click' && action.asVariable) {
+      // Extract the name parameter from the selector if it's a role selector
+      // The selector format is: internal:role=button[name="Continue"i]
+      const roleMatch = action.selector.match(/internal:role=(\w+)(?:\[name="([^"]+)"[^\]]*\])?/);
+      if (roleMatch && roleMatch[2]) {
+        // For button clicks, store the button text as variable
+        formatter.add(`String ${action.asVariable} = ${quote(roleMatch[2])};`);
+        const clazz = !!actionInContext.frame.framePath.length ? 'FrameLocator' : 'Page';
+        formatter.add(`Locator ${action.asVariable}Locator = ${subject}.getByRole(AriaRole.${toSnakeCase(roleMatch[1]).toUpperCase()}, new ${clazz}.GetByRoleOptions().setName(${action.asVariable}));`);
+        let method = 'click';
+        if (action.clickCount === 2)
+          method = 'dblclick';
+        const options = toClickOptionsForSourceCode(action);
+        const optionsString = formatClickOptions(options);
+        formatter.add(`${action.asVariable}Locator.${method}(${optionsString});`);
+      } else {
+        // Fallback to original behavior
+        formatter.add(`Locator ${action.asVariable} = ${subject}.${this._asLocator(action.selector, !!actionInContext.frame.framePath.length)};`);
+        let method = 'click';
+        if (action.clickCount === 2)
+          method = 'dblclick';
+        const options = toClickOptionsForSourceCode(action);
+        const optionsString = formatClickOptions(options);
+        formatter.add(`${action.asVariable}.${method}(${optionsString});`);
+      }
+      return formatter.format();
+    }
+
+    // Handle other actions with variable (check, uncheck, select, press)
+    if (['check', 'uncheck', 'select', 'press'].includes(action.name) && 'asVariable' in action && action.asVariable) {
+      const variableAction = action as actions.CheckAction | actions.UncheckAction | actions.SelectAction | actions.PressAction;
+      
+      // Generate the method call
+      let methodCall = '';
+      if (action.name === 'check' || action.name === 'uncheck') {
+        // Extract the name parameter from the selector if it's a role selector
+        // The selector format is: internal:role=checkbox[name="* PLEASE VERIFY THAT THE"i]
+        const roleMatch = variableAction.selector.match(/internal:role=(\w+)(?:\[name="([^"]+)"[^\]]*\])?/);
+        if (roleMatch && roleMatch[2]) {
+          // For checkbox, store the checkbox label/name as variable
+          formatter.add(`String ${variableAction.asVariable} = ${quote(roleMatch[2])};`);
+          const methodName = action.name;
+          const clazz = !!actionInContext.frame.framePath.length ? 'FrameLocator' : 'Page';
+          methodCall = `${subject}.getByRole(AriaRole.${toSnakeCase(roleMatch[1]).toUpperCase()}, new ${clazz}.GetByRoleOptions().setName(${variableAction.asVariable})).${methodName}();`;
+        } else {
+          // Fallback to original behavior
+          formatter.add(`Locator ${variableAction.asVariable} = ${subject}.${this._asLocator(variableAction.selector, !!actionInContext.frame.framePath.length)};`);
+          methodCall = `${variableAction.asVariable}.${action.name}();`;
+        }
+      } else if (action.name === 'select') {
+        const selectAction = action as actions.SelectAction;
+        // For select, store the selected option value as variable
+        const optionValue = selectAction.options.length === 1 ? selectAction.options[0] : selectAction.options;
+        formatter.add(`String ${variableAction.asVariable} = ${formatSelectOption(optionValue)};`);
+        methodCall = `${subject}.${this._asLocator(variableAction.selector, !!actionInContext.frame.framePath.length)}.selectOption(${variableAction.asVariable});`;
+      } else if (action.name === 'press') {
+        // Original behavior for press
+        const pressAction = action as actions.PressAction;
+        formatter.add(`Locator ${variableAction.asVariable} = ${subject}.${this._asLocator(variableAction.selector, !!actionInContext.frame.framePath.length)};`);
+        const modifiers = toKeyboardModifiers(pressAction.modifiers);
+        const shortcut = [...modifiers, pressAction.key].join('+');
+        methodCall = `${variableAction.asVariable}.press(${quote(shortcut)});`;
+      }
+      
+      formatter.add(methodCall);
+      return formatter.format();
     }
 
     let code = this._generateActionCall(subject, actionInContext, !!actionInContext.frame.framePath.length);

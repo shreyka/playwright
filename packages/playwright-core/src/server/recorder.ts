@@ -52,6 +52,7 @@ export class Recorder implements InstrumentationListener, IRecorder {
   private _contextRecorder: ContextRecorder;
   private _omitCallTracking = false;
   private _currentLanguage: Language;
+  private _addVariable: boolean | undefined;
 
   static async showInspector(context: BrowserContext, params: channels.BrowserContextEnableRecorderParams, recorderAppFactory: IRecorderAppFactory) {
     if (isUnderTest())
@@ -82,6 +83,7 @@ export class Recorder implements InstrumentationListener, IRecorder {
   constructor(context: BrowserContext, params: channels.BrowserContextEnableRecorderParams) {
     this._mode = params.mode || 'none';
     this.handleSIGINT = params.handleSIGINT;
+    this._addVariable = params.addVariable;
     this._contextRecorder = new ContextRecorder(context, params, {});
     this._context = context;
     this._omitCallTracking = !!params.omitCallTracking;
@@ -184,6 +186,7 @@ export class Recorder implements InstrumentationListener, IRecorder {
         language: this._currentLanguage,
         testIdAttributeName: this._contextRecorder.testIdAttributeName(),
         overlay: this._overlayState,
+        addVariable: this._addVariable,
       };
       return uiState;
     });

@@ -242,16 +242,20 @@ class RecordActionTool implements RecorderTool {
 
     // Stall click in case we are observing double-click.
     if (event.detail === 1) {
+      const clickAction: actions.ClickAction = {
+        name: 'click',
+        selector: this._hoveredModel!.selector,
+        position: positionForEvent(event),
+        signals: [],
+        button: buttonForEvent(event),
+        modifiers: modifiersForEvent(event),
+        clickCount: event.detail
+      };
+      
+      // Click action will be tracked when it goes through performAction
+      
       this._pendingClickAction = {
-        action: {
-          name: 'click',
-          selector: this._hoveredModel!.selector,
-          position: positionForEvent(event),
-          signals: [],
-          button: buttonForEvent(event),
-          modifiers: modifiersForEvent(event),
-          clickCount: event.detail
-        },
+        action: clickAction,
         timeout: this._recorder.injectedScript.utils.builtins.setTimeout(() => this._commitPendingClickAction(), 200)
       };
     }
@@ -270,7 +274,7 @@ class RecordActionTool implements RecorderTool {
 
     this._cancelPendingClickAction();
 
-    this._performAction({
+    const dblClickAction: actions.ClickAction = {
       name: 'click',
       selector: this._hoveredModel!.selector,
       position: positionForEvent(event),
@@ -278,7 +282,11 @@ class RecordActionTool implements RecorderTool {
       button: buttonForEvent(event),
       modifiers: modifiersForEvent(event),
       clickCount: event.detail
-    });
+    };
+    
+    // Double-click will be tracked when it goes through performAction
+    
+    this._performAction(dblClickAction);
   }
 
   private _commitPendingClickAction() {
@@ -304,7 +312,7 @@ class RecordActionTool implements RecorderTool {
     if (this._consumedDueToNoModel(event, this._hoveredModel))
       return;
 
-    this._performAction({
+    const rightClickAction: actions.ClickAction = {
       name: 'click',
       selector: this._hoveredModel!.selector,
       position: positionForEvent(event),
@@ -312,7 +320,11 @@ class RecordActionTool implements RecorderTool {
       button: 'right',
       modifiers: 0,
       clickCount: 0
-    });
+    };
+    
+    // Right-click will be tracked when it goes through performAction
+    
+    this._performAction(rightClickAction);
   }
 
   onPointerDown(event: PointerEvent) {
@@ -528,6 +540,9 @@ class RecordActionTool implements RecorderTool {
     this._activeModel = null;
     this._recorder.updateHighlight(null, false);
     this._performingActions.add(action);
+    
+    // Actions are now tracked in Recorder.performAction instead
+    
     void this._recorder.performAction(action).then(() => {
       this._performingActions.delete(action);
 
@@ -809,6 +824,7 @@ class Overlay {
   private _assertValuesToggle: HTMLElement;
   private _assertSnapshotToggle: HTMLElement;
   private _screenshotToggle: HTMLElement;
+  private _addVariableToggle: HTMLElement;
   private _offsetX = 0;
   private _dragState: { offsetX: number, dragStart: { x: number, y: number } } | undefined;
   private _measure: { width: number, height: number } = { width: 0, height: 0 };
@@ -873,6 +889,23 @@ class Overlay {
     this._screenshotToggle.textContent = 'TAKE SCREENSHOT';
     toolsListElement.appendChild(this._screenshotToggle);
 
+    this._addVariableToggle = this._recorder.document.createElement('x-pw-tool-item');
+    this._addVariableToggle.title = 'Add variable for last action';
+    this._addVariableToggle.style.width = 'auto';
+    this._addVariableToggle.style.padding = '0 12px';
+    this._addVariableToggle.style.whiteSpace = 'nowrap';
+    this._addVariableToggle.style.border = '1px solid currentColor';
+    this._addVariableToggle.style.borderRadius = '6px';
+    this._addVariableToggle.style.fontSize = '12px';
+    this._addVariableToggle.style.fontWeight = 'normal';
+    this._addVariableToggle.style.display = 'none'; // Hidden by default
+    this._addVariableToggle.style.alignItems = 'center';
+    this._addVariableToggle.style.justifyContent = 'center';
+    this._addVariableToggle.style.height = '28px';
+    this._addVariableToggle.style.marginLeft = '8px';
+    this._addVariableToggle.textContent = 'ADD VARIABLE';
+    toolsListElement.appendChild(this._addVariableToggle);
+
     this._updateVisualPosition();
     this._refreshListeners();
   }
@@ -894,6 +927,12 @@ class Overlay {
             name: 'screenshot',
             signals: [],
           });
+        }
+      }),
+      addEventListener(this._addVariableToggle, 'click', () => {
+        console.log('[Overlay] Add Variable button clicked');
+        if (!this._addVariableToggle.classList.contains('disabled')) {
+          this._recorder.showVariableDialogForLastAction();
         }
       }),
     ];
@@ -921,6 +960,12 @@ class Overlay {
     this._assertSnapshotToggle.classList.toggle('toggled', state.mode === 'assertingSnapshot');
     this._assertSnapshotToggle.classList.toggle('disabled', state.mode === 'none' || state.mode === 'standby' || state.mode === 'inspecting');
     this._screenshotToggle.classList.toggle('disabled', state.mode === 'none' || state.mode === 'standby' || state.mode === 'inspecting');
+    
+    // Show/hide Add Variable button based on mode
+    const isRecording = state.mode === 'recording' || state.mode === 'recording-inspecting';
+    this._addVariableToggle.style.display = isRecording ? 'flex' : 'none';
+    this._addVariableToggle.classList.toggle('disabled', !isRecording);
+    
     if (this._offsetX !== state.overlay.offsetX) {
       this._offsetX = state.overlay.offsetX;
       this._updateVisualPosition();
@@ -998,6 +1043,315 @@ class Overlay {
   }
 }
 
+class VariableDialog {
+  private _recorder: Recorder;
+  private _dialogElement: HTMLElement | null = null;
+  private _keyboardListener: ((event: KeyboardEvent) => void) | undefined;
+  private _action: actions.Action | null = null;
+  private _beforeUnloadListener: ((event: BeforeUnloadEvent) => void) | undefined;
+  private _onClose: (() => void) | undefined;
+
+  constructor(recorder: Recorder) {
+    this._recorder = recorder;
+  }
+
+  showForAction(action: actions.Action, onClose?: () => void) {
+    console.log('[VariableDialog] showForAction called:', { actionType: action.name, dialogAlreadyShowing: !!this._dialogElement });
+    
+    if (this._dialogElement)
+      return;
+
+    // For fill actions, check if text exists
+    if (action.name === 'fill' && !(action as actions.FillAction).text)
+      return;
+
+    this._action = action;
+    this._onClose = onClose;
+    
+    const variableInput = this._recorder.document.createElement('input') as HTMLInputElement;
+    variableInput.type = 'text';
+    variableInput.placeholder = 'Variable name (e.g., userName)';
+    variableInput.style.padding = '10px 12px';
+    variableInput.style.border = '1px solid #ddd';
+    variableInput.style.borderRadius = '4px';
+    variableInput.style.fontSize = '14px';
+    variableInput.style.width = '100%';
+    variableInput.style.background = 'white';
+    variableInput.style.color = '#333';
+    variableInput.style.outline = 'none';
+    variableInput.style.fontFamily = 'inherit';
+    variableInput.style.boxSizing = 'border-box';
+    variableInput.style.marginBottom = '16px';
+    
+    // Add focus styling
+    variableInput.addEventListener('focus', () => {
+      variableInput.style.borderColor = '#007acc';
+      variableInput.style.boxShadow = '0 0 0 2px rgba(0, 122, 204, 0.2)';
+    });
+    variableInput.addEventListener('blur', () => {
+      variableInput.style.borderColor = '#ddd';
+      variableInput.style.boxShadow = 'none';
+    });
+
+    const onCommit = () => {
+      const variableName = variableInput.value.trim();
+      console.log('[VariableDialog] onCommit:', { variableName, hasAction: !!this._action });
+      if (variableName && this._action) {
+        if (this._action.name === 'fill') {
+          this._recorder.markLastFillAsVariable(variableName);
+        } else {
+          this._recorder.markLastActionAsVariable(variableName);
+        }
+      }
+      this.close();
+      onClose?.();
+    };
+
+    const onCancel = () => {
+      console.log('[VariableDialog] onCancel');
+      this.close();
+      onClose?.();
+    };
+
+    const acceptButton = this._recorder.document.createElement('button');
+    acceptButton.textContent = 'Add Variable';
+    acceptButton.style.background = '#007acc';
+    acceptButton.style.color = 'white';
+    acceptButton.style.border = 'none';
+    acceptButton.style.borderRadius = '4px';
+    acceptButton.style.padding = '8px 16px';
+    acceptButton.style.cursor = 'pointer';
+    acceptButton.style.fontSize = '13px';
+    acceptButton.style.fontWeight = '500';
+    acceptButton.style.marginLeft = '8px';
+    acceptButton.style.fontFamily = 'inherit';
+    acceptButton.addEventListener('click', onCommit);
+    acceptButton.addEventListener('mouseenter', () => {
+      acceptButton.style.background = '#005a9e';
+    });
+    acceptButton.addEventListener('mouseleave', () => {
+      acceptButton.style.background = '#007acc';
+    });
+
+    const cancelButton = this._recorder.document.createElement('button');
+    cancelButton.textContent = 'Close';
+    cancelButton.style.background = '#f0f0f0';
+    cancelButton.style.color = '#333';
+    cancelButton.style.border = '1px solid #ddd';
+    cancelButton.style.borderRadius = '4px';
+    cancelButton.style.padding = '8px 16px';
+    cancelButton.style.cursor = 'pointer';
+    cancelButton.style.fontSize = '13px';
+    cancelButton.style.fontWeight = '500';
+    cancelButton.style.fontFamily = 'inherit';
+    cancelButton.addEventListener('click', onCancel);
+    cancelButton.addEventListener('mouseenter', () => {
+      cancelButton.style.background = '#e0e0e0';
+    });
+    cancelButton.addEventListener('mouseleave', () => {
+      cancelButton.style.background = '#f0f0f0';
+    });
+
+    this._dialogElement = this._recorder.document.createElement('x-pw-dialog');
+    this._dialogElement.style.position = 'fixed';
+    this._dialogElement.style.top = '80px';
+    this._dialogElement.style.left = '50%';
+    this._dialogElement.style.transform = 'translateX(-50%)';
+    this._dialogElement.style.zIndex = '10000';
+    // Light mode styling
+    this._dialogElement.style.background = 'white';
+    this._dialogElement.style.color = '#333';
+    this._dialogElement.style.border = '1px solid #ddd';
+    this._dialogElement.style.borderRadius = '8px';
+    this._dialogElement.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.1)';
+    this._dialogElement.style.minWidth = '400px';
+    this._dialogElement.style.maxWidth = '500px';
+    this._dialogElement.style.width = 'auto';
+    this._dialogElement.style.minHeight = '300px';
+    this._dialogElement.style.height = 'auto';
+    this._dialogElement.style.padding = '20px';
+    
+    this._keyboardListener = (event: KeyboardEvent) => {
+      // Only handle specific keys, let everything else through
+      
+      // Handle escape key to close dialog
+      if (event.key === 'Escape') {
+        onCancel();
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      
+      // Handle enter key in the input field to commit
+      if (event.key === 'Enter' && event.target === variableInput) {
+        onCommit();
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      
+      // Handle tab key to trap focus within dialog
+      if (event.key === 'Tab') {
+        const focusableElements: HTMLElement[] = [variableInput, descriptionTextarea, cancelButton, acceptButton];
+        const currentIndex = focusableElements.findIndex(el => el === event.target);
+        
+        if (currentIndex !== -1) {
+          event.preventDefault();
+          let nextIndex;
+          if (event.shiftKey) {
+            nextIndex = currentIndex - 1;
+            if (nextIndex < 0) nextIndex = focusableElements.length - 1;
+          } else {
+            nextIndex = currentIndex + 1;
+            if (nextIndex >= focusableElements.length) nextIndex = 0;
+          }
+          
+          focusableElements[nextIndex].focus();
+        }
+        return;
+      }
+      
+      // Let all other events through - don't block normal typing!
+    };
+
+    // Listen for page unload/navigation to handle dialog appropriately
+    this._beforeUnloadListener = (event: BeforeUnloadEvent) => {
+      console.log('[VariableDialog] Page is unloading/navigating');
+      // Try to quickly save the variable before navigation
+      const variableName = variableInput.value.trim();
+      if (variableName && this._action) {
+        console.log('[VariableDialog] Quick-saving variable before navigation:', variableName);
+        if (this._action.name === 'fill') {
+          this._recorder.markLastFillAsVariable(variableName);
+        } else {
+          this._recorder.markLastActionAsVariable(variableName);
+        }
+      }
+      this.close();
+    };
+
+    this._recorder.document.addEventListener('keydown', this._keyboardListener, true);
+    this._recorder.injectedScript.window.addEventListener('beforeunload', this._beforeUnloadListener);
+    
+    // Create title
+    const titleElement = this._recorder.document.createElement('div');
+    let titleText = '';
+    if (action.name === 'fill') {
+      const displayText = (action as actions.FillAction).text;
+      titleText = `Save "${displayText.substring(0, 20)}${displayText.length > 20 ? '...' : ''}" as variable`;
+    } else if (action.name === 'click') {
+      titleText = 'Save Click as variable';
+    } else if (action.name === 'check') {
+      titleText = 'Save Check as variable';
+    } else if (action.name === 'uncheck') {
+      titleText = 'Save Uncheck as variable';
+    } else if (action.name === 'select') {
+      titleText = 'Save Select as variable';
+    } else if (action.name === 'press') {
+      titleText = 'Save Press as variable';
+    } else {
+      titleText = 'Save Action as variable';
+    }
+    titleElement.textContent = titleText;
+    titleElement.style.fontSize = '16px';
+    titleElement.style.fontWeight = '500';
+    titleElement.style.marginBottom = '16px';
+    titleElement.style.color = '#333';
+    
+    // Create description label
+    const descriptionLabel = this._recorder.document.createElement('label');
+    descriptionLabel.textContent = 'Description (optional)';
+    descriptionLabel.style.display = 'block';
+    descriptionLabel.style.marginTop = '16px';
+    descriptionLabel.style.marginBottom = '8px';
+    descriptionLabel.style.fontSize = '13px';
+    descriptionLabel.style.color = '#666';
+    descriptionLabel.style.fontWeight = '500';
+    
+    // Create description textarea
+    const descriptionTextarea = this._recorder.document.createElement('textarea');
+    descriptionTextarea.placeholder = 'Add a description for this variable...';
+    descriptionTextarea.style.width = '100%';
+    descriptionTextarea.style.minHeight = '100px';
+    descriptionTextarea.style.padding = '10px 12px';
+    descriptionTextarea.style.fontSize = '14px';
+    descriptionTextarea.style.border = '1px solid #ddd';
+    descriptionTextarea.style.borderRadius = '4px';
+    descriptionTextarea.style.resize = 'vertical';
+    descriptionTextarea.style.fontFamily = 'inherit';
+    descriptionTextarea.style.lineHeight = '1.5';
+    descriptionTextarea.style.outline = 'none';
+    descriptionTextarea.style.boxSizing = 'border-box';
+    
+    // Add focus styling for textarea
+    descriptionTextarea.addEventListener('focus', () => {
+      descriptionTextarea.style.borderColor = '#007acc';
+      descriptionTextarea.style.boxShadow = '0 0 0 2px rgba(0, 122, 204, 0.2)';
+    });
+    descriptionTextarea.addEventListener('blur', () => {
+      descriptionTextarea.style.borderColor = '#ddd';
+      descriptionTextarea.style.boxShadow = 'none';
+    });
+    
+    // Create button container
+    const buttonContainer = this._recorder.document.createElement('div');
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.justifyContent = 'flex-end';
+    buttonContainer.style.gap = '8px';
+    buttonContainer.style.marginTop = '16px';
+    buttonContainer.appendChild(cancelButton);
+    buttonContainer.appendChild(acceptButton);
+    
+    // Create variable name label
+    const variableLabel = this._recorder.document.createElement('label');
+    variableLabel.textContent = 'Variable name';
+    variableLabel.style.display = 'block';
+    variableLabel.style.marginBottom = '8px';
+    variableLabel.style.fontSize = '13px';
+    variableLabel.style.color = '#666';
+    variableLabel.style.fontWeight = '500';
+    
+    // Remove toolbar and create simple layout
+    this._dialogElement.appendChild(titleElement);
+    this._dialogElement.appendChild(variableLabel);
+    this._dialogElement.appendChild(variableInput);
+    this._dialogElement.appendChild(descriptionLabel);
+    this._dialogElement.appendChild(descriptionTextarea);
+    this._dialogElement.appendChild(buttonContainer);
+    
+    this._recorder.highlight.appendChild(this._dialogElement);
+    variableInput.focus();
+  }
+
+  close() {
+    console.log('[VariableDialog] close called:', { dialogShowing: !!this._dialogElement });
+    if (!this._dialogElement)
+      return;
+    
+    this._dialogElement.remove();
+    if (this._keyboardListener)
+      this._recorder.document.removeEventListener('keydown', this._keyboardListener, true);
+    if (this._beforeUnloadListener)
+      this._recorder.injectedScript.window.removeEventListener('beforeunload', this._beforeUnloadListener);
+    this._dialogElement = null;
+    this._keyboardListener = undefined;
+    this._beforeUnloadListener = undefined;
+    this._action = null;
+    
+    // Call onClose callback
+    this._onClose?.();
+    this._onClose = undefined;
+  }
+
+  isShowing(): boolean {
+    return !!this._dialogElement;
+  }
+
+  getAction(): actions.Action | null {
+    return this._action;
+  }
+}
+
 export class Recorder {
   readonly injectedScript: InjectedScript;
   private _listeners: (() => void)[] = [];
@@ -1008,6 +1362,8 @@ export class Recorder {
   readonly highlight: Highlight;
   readonly overlay: Overlay | undefined;
   private _stylesheet: CSSStyleSheet;
+  private _lastAction: actions.Action | null = null;  // Track last action for Add Variable button
+  private _variableDialog: VariableDialog;
   state: UIState = {
     mode: 'none',
     testIdAttributeName: 'data-testid',
@@ -1021,6 +1377,7 @@ export class Recorder {
     this.document = injectedScript.document;
     this.injectedScript = injectedScript;
     this.highlight = injectedScript.createHighlight();
+    this._variableDialog = new VariableDialog(this);
     this._tools = {
       'none': new NoneTool(),
       'standby': new NoneTool(),
@@ -1093,9 +1450,18 @@ export class Recorder {
     this.clearHighlight();
     this._currentTool = newTool;
     this.injectedScript.document.body?.setAttribute('data-pw-cursor', newTool.cursor());
+    
+    // Clean up any pending variable dialog when switching tools
+    this._variableDialog.close();
   }
 
   setUIState(state: UIState, delegate: RecorderDelegate) {
+    console.log('[Recorder] setUIState called:', { 
+      mode: state.mode, 
+      addVariable: state.addVariable,
+      previousAddVariable: this.state.addVariable 
+    });
+    
     this._delegate = delegate;
 
     if (state.actionPoint && this.state.actionPoint && state.actionPoint.x === this.state.actionPoint.x && state.actionPoint.y === this.state.actionPoint.y) {
@@ -1148,6 +1514,8 @@ export class Recorder {
   private _onClick(event: MouseEvent) {
     if (!event.isTrusted)
       return;
+    if (this._shouldIgnoreEventDueToVariableDialog(event))
+      return;
     if (this.overlay?.onClick(event))
       return;
     if (this._ignoreOverlayEvent(event))
@@ -1157,6 +1525,8 @@ export class Recorder {
 
   private _onDblClick(event: MouseEvent) {
     if (!event.isTrusted)
+      return;
+    if (this._shouldIgnoreEventDueToVariableDialog(event))
       return;
     if (this.overlay?.onDblClick(event))
       return;
@@ -1168,6 +1538,8 @@ export class Recorder {
   private _onContextMenu(event: MouseEvent) {
     if (!event.isTrusted)
       return;
+    if (this._shouldIgnoreEventDueToVariableDialog(event))
+      return;
     if (this._ignoreOverlayEvent(event))
       return;
     this._currentTool.onContextMenu?.(event);
@@ -1175,6 +1547,8 @@ export class Recorder {
 
   private _onDragStart(event: DragEvent) {
     if (!event.isTrusted)
+      return;
+    if (this._shouldIgnoreEventDueToVariableDialog(event))
       return;
     if (this._ignoreOverlayEvent(event))
       return;
@@ -1184,6 +1558,8 @@ export class Recorder {
   private _onPointerDown(event: PointerEvent) {
     if (!event.isTrusted)
       return;
+    if (this._shouldIgnoreEventDueToVariableDialog(event))
+      return;
     if (this._ignoreOverlayEvent(event))
       return;
     this._currentTool.onPointerDown?.(event);
@@ -1191,6 +1567,8 @@ export class Recorder {
 
   private _onPointerUp(event: PointerEvent) {
     if (!event.isTrusted)
+      return;
+    if (this._shouldIgnoreEventDueToVariableDialog(event))
       return;
     if (this._ignoreOverlayEvent(event))
       return;
@@ -1200,6 +1578,8 @@ export class Recorder {
   private _onMouseDown(event: MouseEvent) {
     if (!event.isTrusted)
       return;
+    if (this._shouldIgnoreEventDueToVariableDialog(event))
+      return;
     if (this._ignoreOverlayEvent(event))
       return;
     this._currentTool.onMouseDown?.(event);
@@ -1207,6 +1587,8 @@ export class Recorder {
 
   private _onMouseUp(event: MouseEvent) {
     if (!event.isTrusted)
+      return;
+    if (this._shouldIgnoreEventDueToVariableDialog(event))
       return;
     if (this.overlay?.onMouseUp(event))
       return;
@@ -1218,6 +1600,8 @@ export class Recorder {
   private _onMouseMove(event: MouseEvent) {
     if (!event.isTrusted)
       return;
+    if (this._shouldIgnoreEventDueToVariableDialog(event))
+      return;
     if (this.overlay?.onMouseMove(event))
       return;
     if (this._ignoreOverlayEvent(event))
@@ -1228,6 +1612,8 @@ export class Recorder {
   private _onMouseEnter(event: MouseEvent) {
     if (!event.isTrusted)
       return;
+    if (this._shouldIgnoreEventDueToVariableDialog(event))
+      return;
     if (this._ignoreOverlayEvent(event))
       return;
     this._currentTool.onMouseEnter?.(event);
@@ -1235,6 +1621,8 @@ export class Recorder {
 
   private _onMouseLeave(event: MouseEvent) {
     if (!event.isTrusted)
+      return;
+    if (this._shouldIgnoreEventDueToVariableDialog(event))
       return;
     if (this._ignoreOverlayEvent(event))
       return;
@@ -1244,6 +1632,8 @@ export class Recorder {
   private _onFocus(event: Event) {
     if (!event.isTrusted)
       return;
+    if (this._shouldIgnoreEventDueToVariableDialog(event))
+      return;
     if (this._ignoreOverlayEvent(event))
       return;
     this._currentTool.onFocus?.(event);
@@ -1252,6 +1642,8 @@ export class Recorder {
   private _onScroll(event: Event) {
     if (!event.isTrusted)
       return;
+    if (this._shouldIgnoreEventDueToVariableDialog(event))
+      return;
     this._lastHighlightedSelector = undefined;
     this._lastHighlightedAriaTemplateJSON = 'undefined';
     this.highlight.hideActionPoint();
@@ -1259,6 +1651,8 @@ export class Recorder {
   }
 
   private _onInput(event: Event) {
+    if (this._shouldIgnoreEventDueToVariableDialog(event))
+      return;
     if (this._ignoreOverlayEvent(event))
       return;
     this._currentTool.onInput?.(event);
@@ -1267,6 +1661,8 @@ export class Recorder {
   private _onKeyDown(event: KeyboardEvent) {
     if (!event.isTrusted)
       return;
+    if (this._shouldIgnoreEventDueToVariableDialog(event))
+      return;
     if (this._ignoreOverlayEvent(event))
       return;
     this._currentTool.onKeyDown?.(event);
@@ -1274,6 +1670,8 @@ export class Recorder {
 
   private _onKeyUp(event: KeyboardEvent) {
     if (!event.isTrusted)
+      return;
+    if (this._shouldIgnoreEventDueToVariableDialog(event))
       return;
     if (this._ignoreOverlayEvent(event))
       return;
@@ -1306,6 +1704,13 @@ export class Recorder {
     });
   }
 
+  private _shouldIgnoreEventDueToVariableDialog(event: Event): boolean {
+    // When the variable dialog is showing, ignore ALL events for recording
+    // This allows normal browser behavior (typing, clicking) to work
+    // while preventing the recorder from interfering
+    return this._variableDialog.isShowing();
+  }
+
   deepEventTarget(event: Event): HTMLElement {
     for (const element of event.composedPath()) {
       if (!this.overlay?.contains(element as Element))
@@ -1319,10 +1724,31 @@ export class Recorder {
   }
 
   async performAction(action: actions.PerformOnRecordAction) {
+    console.log('[Recorder] performAction called:', { 
+      name: action.name,
+      actionDetails: action
+    });
+    
+    // Track ALL actions for Add Variable button (click, check, uncheck, select, press)
+    console.log('[Recorder] Tracking action in performAction:', action.name);
+    this._lastAction = action;
+    
+    // Normal action execution
     await this._delegate.performAction?.(action).catch(() => {});
   }
 
   recordAction(action: actions.Action) {
+    console.log('[Recorder] recordAction called:', { 
+      name: action.name, 
+      fullAction: action
+    });
+    
+    // Track last action for Add Variable button (click, fill, check, uncheck, select, press)
+    if (['click', 'fill', 'check', 'uncheck', 'select', 'press'].includes(action.name)) {
+      console.log('[Recorder] Tracking last action for Add Variable button:', { name: action.name });
+      this._lastAction = action;
+    }
+    
     void this._delegate.recordAction?.(action);
   }
 
@@ -1333,6 +1759,96 @@ export class Recorder {
   elementPicked(selector: string, model: HighlightModel) {
     const ariaSnapshot = this.injectedScript.ariaSnapshot(model.elements[0]);
     void this._delegate.elementPicked?.({ selector, ariaSnapshot });
+  }
+
+  markLastFillAsVariable(variableName: string) {
+    // Get the action from the variable dialog instead of _lastFillAction
+    // because _lastFillAction might have been cleared
+    const action = this._variableDialog.getAction();
+    if (!action || action.name !== 'fill')
+      return;
+    
+    console.log('[Recorder] markLastFillAsVariable creating variable action:', { variableName, text: (action as actions.FillAction).text });
+    
+    // Create a new action that marks the fill as a variable
+    const variableAction = {
+      ...action,
+      asVariable: variableName
+    };
+    
+    void this._delegate.recordAction?.(variableAction);
+    
+    // Provide visual feedback
+    if (this.overlay) {
+      this.overlay.flashToolSucceeded('assertingValue');
+    }
+  }
+
+  clearLastFillAction() {
+    this._lastAction = null;
+  }
+
+  trackLastAction(action: actions.Action) {
+    console.log('[Recorder] trackLastAction called:', { 
+      name: action.name,
+      actionDetails: action,
+      previousLastAction: this._lastAction?.name
+    });
+    this._lastAction = action;
+    console.log('[Recorder] lastAction updated to:', this._lastAction.name);
+  }
+
+  getLastAction(): actions.Action | null {
+    return this._lastAction;
+  }
+
+  showVariableDialogForLastAction() {
+    console.log('[Recorder] showVariableDialogForLastAction called:', {
+      hasLastAction: !!this._lastAction,
+      lastActionName: this._lastAction?.name
+    });
+    
+    if (!this._lastAction) {
+      console.log('[Recorder] No last action to create variable for');
+      return;
+    }
+    
+    console.log('[Recorder] showVariableDialogForLastAction:', { actionName: this._lastAction.name });
+    
+    if (this._lastAction.name === 'fill') {
+      // For fill actions, show dialog for the text value
+      this._variableDialog.showForAction(this._lastAction as actions.FillAction);
+    } else if (['click', 'check', 'uncheck', 'select', 'press'].includes(this._lastAction.name)) {
+      // For all other actions, show dialog for the locator
+      this._variableDialog.showForAction(this._lastAction);
+    } else {
+      console.log('[Recorder] Unsupported action type for variables:', this._lastAction.name);
+    }
+  }
+
+
+  
+  markLastActionAsVariable(variableName: string) {
+    if (!this._lastAction) return;
+    
+    console.log('[Recorder] markLastActionAsVariable:', { actionName: this._lastAction.name, variableName });
+    
+    if (['fill', 'click', 'check', 'uncheck', 'select', 'press'].includes(this._lastAction.name)) {
+      // Create a copy of the action with the asVariable property
+      const variableAction = {
+        ...this._lastAction,
+        asVariable: variableName
+      } as actions.Action;
+      
+      void this._delegate.recordAction?.(variableAction);
+      
+      // Provide visual feedback
+      if (this.overlay) {
+        this.overlay.flashToolSucceeded('assertingValue');
+      }
+    } else {
+      console.log('[Recorder] Unsupported action type for variables:', this._lastAction.name);
+    }
   }
 }
 

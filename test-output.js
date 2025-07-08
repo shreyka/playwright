@@ -6,7 +6,6 @@ const { chromium } = require('playwright');
   });
   const context = await browser.newContext();
   await page.goto('https://www.browserscan.net/');
-  await page.close();
 
   // ---------------------
   await context.close();

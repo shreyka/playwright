@@ -64,6 +64,86 @@ export class PythonLanguageGenerator implements LanguageGenerator {
     if (signals.dialog)
       formatter.add(`  ${pageAlias}.once("dialog", lambda dialog: dialog.dismiss())`);
 
+    // Handle fill action with variable
+    if (action.name === 'fill' && action.asVariable) {
+      formatter.add(`${action.asVariable} = ${quote(action.text)}`);
+      const fillCode = `${this._awaitPrefix}${subject}.${this._asLocator(action.selector)}.fill(${action.asVariable})`;
+      formatter.add(fillCode);
+      return formatter.format();
+    }
+
+    // Handle click action with variable
+    if (action.name === 'click' && action.asVariable) {
+      console.log('[Python Generator] Click action with variable:', { selector: action.selector, asVariable: action.asVariable });
+      // Extract the name parameter from the selector if it's a role selector
+      // The selector format is: internal:role=button[name="Continue"i]
+      const roleMatch = action.selector.match(/internal:role=(\w+)(?:\[name="([^"]+)"[^\]]*\])?/);
+      if (roleMatch && roleMatch[2]) {
+        // For button clicks, store the button text as variable
+        formatter.add(`${action.asVariable} = ${quote(roleMatch[2])}`);
+        let method = 'click';
+        if (action.clickCount === 2)
+          method = 'dblclick';
+        const options = toClickOptionsForSourceCode(action);
+        const optionsString = formatOptions(options, false);
+        const clickCode = optionsString 
+          ? `${this._awaitPrefix}${subject}.get_by_role(${quote(roleMatch[1])}, name=${action.asVariable}).${method}(${optionsString})`
+          : `${this._awaitPrefix}${subject}.get_by_role(${quote(roleMatch[1])}, name=${action.asVariable}).${method}()`;
+        formatter.add(clickCode);
+        return formatter.format();
+      }
+      // Fallback to original behavior
+      formatter.add(`${action.asVariable} = ${subject}.${this._asLocator(action.selector)}`);
+      let method = 'click';
+      if (action.clickCount === 2)
+        method = 'dblclick';
+      const options = toClickOptionsForSourceCode(action);
+      const optionsString = formatOptions(options, false);
+      const clickCode = optionsString
+        ? `${this._awaitPrefix}${action.asVariable}.${method}(${optionsString})`
+        : `${this._awaitPrefix}${action.asVariable}.${method}()`;
+      formatter.add(clickCode);
+      return formatter.format();
+    }
+
+    // Handle other actions with variable (check, uncheck, select, press)
+    if (['check', 'uncheck', 'select', 'press'].includes(action.name) && 'asVariable' in action && action.asVariable) {
+      const variableAction = action as actions.CheckAction | actions.UncheckAction | actions.SelectAction | actions.PressAction;
+      
+      // Generate the method call
+      let methodCall = '';
+      if (action.name === 'check' || action.name === 'uncheck') {
+        // Extract the name parameter from the selector if it's a role selector
+        // The selector format is: internal:role=checkbox[name="* PLEASE VERIFY THAT THE"i]
+        const roleMatch = variableAction.selector.match(/internal:role=(\w+)(?:\[name="([^"]+)"[^\]]*\])?/);
+        if (roleMatch && roleMatch[2]) {
+          // For checkbox, store the checkbox label/name as variable
+          formatter.add(`${variableAction.asVariable} = ${quote(roleMatch[2])}`);
+          methodCall = `${this._awaitPrefix}${subject}.get_by_role(${quote(roleMatch[1])}, name=${variableAction.asVariable}).${action.name}()`;
+        } else {
+          // Fallback to original behavior
+          formatter.add(`${variableAction.asVariable} = ${subject}.${this._asLocator(variableAction.selector)}`);
+          methodCall = `${this._awaitPrefix}${variableAction.asVariable}.${action.name}()`;
+        }
+      } else if (action.name === 'select') {
+        const selectAction = action as actions.SelectAction;
+        // For select, store the selected option value as variable
+        const optionValue = selectAction.options.length === 1 ? selectAction.options[0] : selectAction.options;
+        formatter.add(`${variableAction.asVariable} = ${formatValue(optionValue)}`);
+        methodCall = `${this._awaitPrefix}${subject}.${this._asLocator(variableAction.selector)}.select_option(${variableAction.asVariable})`;
+      } else if (action.name === 'press') {
+        // Original behavior for press
+        const pressAction = action as actions.PressAction;
+        formatter.add(`${variableAction.asVariable} = ${subject}.${this._asLocator(variableAction.selector)}`);
+        const modifiers = toKeyboardModifiers(pressAction.modifiers);
+        const shortcut = [...modifiers, pressAction.key].join('+');
+        methodCall = `${this._awaitPrefix}${variableAction.asVariable}.press(${quote(shortcut)})`;
+      }
+      
+      formatter.add(methodCall);
+      return formatter.format();
+    }
+
     let code = `${this._awaitPrefix}${this._generateActionCall(subject, actionInContext)}`;
 
     if (signals.popup) {
